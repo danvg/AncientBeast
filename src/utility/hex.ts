@@ -96,6 +96,8 @@ export class Hex {
 	trap: Trap;
 	coordText: Phaser.Text;
 
+	overlayCancel: Boolean;
+
 	/**
 	 *
 	 * @param x Hex coordinates
@@ -466,6 +468,8 @@ export class Hex {
 	}
 
 	updateStyle() {
+		this.overlayCancel = false
+
 		// Display Hex
 		let targetAlpha = this.reachable || Boolean(this.displayClasses.match(/creature/g));
 
@@ -535,6 +539,8 @@ export class Hex {
 			this.grid.overlayHexesGroup.bringToTop(this.overlay);
 		} else {
 			this.overlay.loadTexture('cancel');
+			this.overlay.anchor.setTo(0.5, 0.5);
+			this.overlayCancel = true
 		}
 
 		this.overlay.alpha = targetAlpha ? 1 : 0;

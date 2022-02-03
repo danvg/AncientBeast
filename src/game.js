@@ -363,6 +363,10 @@ export default class Game {
 		if (this.gameState != 'playing') {
 			return;
 		}
+
+		if (this.grid.selectedHex && this.grid.selectedHex.overlayCancel) {
+			this.grid.selectedHex.overlay.angle += 5;
+		}
 	}
 
 	phaserRender() {
