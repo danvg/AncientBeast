@@ -365,7 +365,7 @@ export default class Game {
 		}
 
 		if (this.grid.selectedHex && this.grid.selectedHex.overlayCancel) {
-			this.grid.selectedHex.overlay.angle += 5;
+			this.grid.selectedHex.overlay.angle += 90 * this.Phaser.time.physicsElapsed;
 		}
 	}
 
