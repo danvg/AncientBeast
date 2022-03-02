@@ -1,99 +1,21 @@
-import * as $j from 'jquery';
-import { Trap } from './trap';
-import { Creature } from '../creature';
-import { HexGrid } from './hexgrid';
-import Game from '../game';
-import Phaser from 'phaser-ce';
-import { Drop } from '../drops';
-
-export enum Direction {
-	UpRight = 0,
-	Right = 1,
-	DownRight = 2,
-	DownLeft = 3,
-	Left = 4,
-	UpLeft = 5,
-}
+import $j from 'jquery';
+import { Creature } from '../../creature';
+import { Effect } from '../../effect';
+import Game from '../../game';
+import { Hex } from '../hex';
+import { HexGrid } from '../hexgrid';
+import { Trap } from '../trap';
+import { PhaserHexGrid } from './phaser_hexgrid';
+import { PhaserTrap } from './phaser_trap';
 
 const shrinkScale = 0.5;
 
-/**
- * Object containing hex information and positions.
- */
-export class Hex {
-	game: Game;
-	grid: HexGrid;
-
-	/**
-	 * Hex coordinates.
-	 */
-	x: number;
-
-	/**
-	 * Hex coordinates.
-	 */
-	y: number;
-
-	/**
-	 * Pos object for hex comparison {x,y}.
-	 */
-	pos: { x: number; y: number };
-
-	coord: string;
-
-	/**
-	 * Pathfinding score f = g + h.
-	 */
-	f: number;
-
-	/**
-	 * Pathfinding distance from start.
-	 */
-	g: number;
-
-	/**
-	 * Pathfinding distance to finish.
-	 */
-	h: number;
-
-	/**
-	 * Pathfinding parent hex (the one you came from).
-	 */
-	pathparent: Hex;
-
-	/**
-	 * Set to true if an obstacle it on it. Restrict movement.
-	 */
-	blocked: boolean;
-
-	/**
-	 * Creature object, undefined if empty.
-	 */
-	creature: Creature;
-
-	/**
-	 * Set to true if accessible by current action.
-	 */
-	reachable: boolean;
-	direction: Direction;
-	drop: Drop;
-	displayClasses: string;
-	overlayClasses: string;
-	width: number;
-	height: number;
-
-	/**
-	 * Pos object to position creature with absolute coordinates {left,top}.
-	 */
-	displayPos: { x: number; y: number };
-
-	originalDisplayPos: { x: number; y: number };
+export class PhaserHex extends Hex {
 	tween: Phaser.Tween;
 	container: Phaser.Sprite;
 	display: Phaser.Sprite;
 	overlay: Phaser.Sprite;
 	input: Phaser.Sprite;
-	trap: Trap;
 	coordText: Phaser.Text;
 
 	/**
@@ -104,30 +26,7 @@ export class Hex {
 	 * @param game
 	 */
 	constructor(x: number, y: number, grid: HexGrid, game?: Game) {
-		this.game = (grid && grid.game) || game;
-		this.grid = grid;
-		this.x = x;
-		this.y = y;
-		this.pos = {
-			x: x,
-			y: y,
-		};
-		this.coord = String.fromCharCode(64 + this.y + 1) + (this.x + 1);
-		game = this.game;
-
-		// Pathfinding
-		this.f = 0;
-		this.g = 0;
-		this.h = 0;
-		this.pathparent = null;
-
-		this.blocked = false;
-		this.creature = undefined;
-		this.reachable = true;
-		this.direction = -1; // Used for queryDirection
-		this.drop = undefined; // Drop items
-		this.displayClasses = '';
-		this.overlayClasses = '';
+		super(x, y, grid, game);
 
 		// Horizontal hex grid, width is distance between opposite sides
 		this.width = 90;
@@ -139,12 +38,12 @@ export class Hex {
 
 		this.originalDisplayPos = $j.extend({}, this.displayPos);
 
-		this.tween = null;
+		if (grid && grid instanceof PhaserHexGrid) {
+			const phaserHexGrid = grid as PhaserHexGrid;
 
-		if (grid) {
 			/* Sprite to "group" the display, overlay, and input sprites for relative
 			positioning and scaling. */
-			this.container = grid.hexesGroup.create(
+			this.container = phaserHexGrid.hexesGroup.create(
 				// 10px is the offset from the old version
 				this.displayPos.x - 10,
 				this.displayPos.y,
@@ -152,15 +51,15 @@ export class Hex {
 			);
 			this.container.alpha = 0;
 
-			this.display = grid.displayHexesGroup.create(0, 0, 'hex');
+			this.display = phaserHexGrid.displayHexesGroup.create(0, 0, 'hex');
 			this.display.alignIn(this.container, Phaser.CENTER);
 			this.display.alpha = 0;
 
-			this.overlay = grid.overlayHexesGroup.create(0, 0, 'hex');
+			this.overlay = phaserHexGrid.overlayHexesGroup.create(0, 0, 'hex');
 			this.overlay.alignIn(this.container, Phaser.CENTER);
 			this.overlay.alpha = 0;
 
-			this.input = grid.inputHexesGroup.create(0, 0, 'input');
+			this.input = phaserHexGrid.inputHexesGroup.create(0, 0, 'input');
 			this.input.alignIn(this.container, Phaser.TOP_LEFT);
 			this.input.inputEnabled = true;
 			this.input.input.pixelPerfectClick = true;
@@ -205,30 +104,13 @@ export class Hex {
 						break;
 				}
 			}, this);
+
+			this.displayPos.y = this.displayPos.y * 0.75 + 30;
 		}
-
-		this.displayPos.y = this.displayPos.y * 0.75 + 30;
-
-		this.trap = undefined;
 	}
 
-	onSelectFn(arg0: this) {
-		// No-op function.
-	}
-
-	onHoverOffFn(arg0: this) {
-		// No-op function.
-	}
-
-	onConfirmFn(arg0: this) {
-		// No-op function.
-	}
-
-	onRightClickFn(arg0: this) {
-		// No-op function.
-	}
-
-	/* adjacentHex(distance)
+	/**
+	 * adjacentHex(distance)
 	 *
 	 * distance : 	integer : 	Distance form the current hex
 	 *
@@ -237,13 +119,13 @@ export class Hex {
 	 * This function return an array containing all hexes of the grid
 	 * at the distance given of the current hex.
 	 */
-	adjacentHex(distance) {
+	adjacentHex(distance: number) {
 		const adjHex = [];
 
 		for (let i = -distance; i <= distance; i++) {
 			const deltaY = i;
-			let startX;
-			let endX;
+			let startX: number;
+			let endX: number;
 
 			if (this.y % 2 == 0) {
 				// Evenrow
@@ -274,11 +156,12 @@ export class Hex {
 		return adjHex;
 	}
 
-	/* ghostOverlap()
+	/**
+	 * ghostOverlap()
 	 *
 	 * add ghosted class to creature on hexes behind this hex
 	 */
-	ghostOverlap() {
+	override ghostOverlap() {
 		const grid = this.grid || this.game.grid;
 		let ghostedCreature;
 
@@ -323,67 +206,21 @@ export class Hex {
 		}
 	}
 
-	/* cleanPathAttr(includeG)
-	 *
-	 * includeG : 	Boolean : 	Set includeG to True if you change the start of the calculated path.
-	 *
-	 * This function reset all the pathfinding attribute to
-	 * 0 to calculate new path to another hex.
-	 */
-	cleanPathAttr(includeG) {
-		this.f = 0;
-		this.g = includeG ? 0 : this.g;
-		this.h = 0;
-		this.pathparent = null;
+	override createTrap(type: string, effects: Effect[], owner: string, opt: any): Trap {
+		if (this.trap) {
+			this.destroyTrap();
+		}
+
+		this.trap = new PhaserTrap(this.x, this.y, type, effects, owner, opt, this.game);
+		return this.trap;
 	}
 
 	/**
-	 *
-	 * @param size Size of the creature.
-	 * @param id ID of the creature.
-	 * @param ignoreReachable Take into account the reachable property.
-	 * @returns True if this hex is walkable.
-	 */
-	isWalkable(size: number, id: number, ignoreReachable = false, debug = false) {
-		let blocked = false;
-
-		for (let i = 0; i < size; i++) {
-			// For each Hex of the creature
-			if (this.x - i >= 0 && this.x - i < this.grid.hexes[this.y].length) {
-				//if hex exists
-				const hex = this.grid.hexes[this.y][this.x - i];
-				// Verify if blocked. If it's blocked by one attribute, OR statement will keep it status
-				blocked = blocked || hex.blocked;
-
-				if (!ignoreReachable) {
-					blocked = blocked || !hex.reachable;
-				}
-
-				let isNotMovingCreature;
-				if (hex.creature instanceof Creature) {
-					isNotMovingCreature = hex.creature.id !== id;
-					blocked = blocked || isNotMovingCreature; // Not blocked if this block contains the moving creature
-				}
-				if (debug) {
-					console.log({ isNotMovingCreature });
-				}
-			} else {
-				if (debug) {
-					console.log('BLOCKED BY GRID BOUNDARIES', this);
-				}
-				// Blocked by grid boundaries
-				blocked = true;
-			}
-		}
-
-		return !blocked; // Its walkable if it's NOT blocked
-	}
-
-	/* overlayVisualState
+	 * overlayVisualState
 	 *
 	 * Change the appearance of the overlay hex
 	 */
-	overlayVisualState(classes) {
+	overlayVisualState(classes: string) {
 		classes = classes ? classes : '';
 		this.overlayClasses += ' ' + classes + ' ';
 		this.updateStyle();
@@ -394,16 +231,17 @@ export class Hex {
 	 *
 	 * @param {string} classes Display classes to be added to the Hex.
 	 */
-	displayVisualState(classes = '') {
+	displayVisualState(classes: string = '') {
 		this.displayClasses = `${this.displayClasses} ${classes}`.trim();
 		this.updateStyle();
 	}
 
-	/* cleanOverlayVisualState
+	/**
+	 * cleanOverlayVisualState
 	 *
 	 * Clear the appearance of the overlay hex
 	 */
-	cleanOverlayVisualState(classes = '') {
+	cleanOverlayVisualState(classes: string = '') {
 		classes =
 			classes ||
 			'creature weakDmg active moveto selected hover h_player0 h_player1 h_player2 h_player3 player0 player1 player2 player3';
@@ -417,11 +255,12 @@ export class Hex {
 		this.updateStyle();
 	}
 
-	/* cleanDisplayVisualState
+	/**
+	 * cleanDisplayVisualState
 	 *
 	 * Clear the appearance of the display hex
 	 */
-	cleanDisplayVisualState(classes = '') {
+	cleanDisplayVisualState(classes: string = '') {
 		classes = classes || 'adj hover creature player0 player1 player2 player3 dashed shrunken';
 		const a = classes.split(' ');
 
@@ -435,7 +274,8 @@ export class Hex {
 		this.updateStyle();
 	}
 
-	/* setReachable()
+	/**
+	 * setReachable()
 	 *
 	 * Set Hex.reachable to True for this hex and change $display class
 	 */
@@ -445,7 +285,8 @@ export class Hex {
 		this.updateStyle();
 	}
 
-	/* unsetReachable()
+	/**
+	 * unsetReachable()
 	 *
 	 * Set Hex.reachable to False for this hex and change $display class
 	 */
@@ -476,7 +317,7 @@ export class Hex {
 		if (this.displayClasses.match(/0|1|2|3/)) {
 			const player = this.displayClasses.match(/0|1|2|3/);
 			this.display.loadTexture(`hex_p${player}`);
-			this.grid.displayHexesGroup.bringToTop(this.display);
+			(this.grid as PhaserHexGrid).displayHexesGroup.bringToTop(this.display);
 		} else if (this.displayClasses.match(/adj/)) {
 			this.display.loadTexture('hex_path');
 		} else if (this.displayClasses.match(/dashed/)) {
@@ -503,6 +344,7 @@ export class Hex {
 		// Display Coord
 		if (this.displayClasses.match(/showGrid/g)) {
 			if (!(this.coordText && this.coordText.exists)) {
+				// TODO: Cast to PhaserGame implementation
 				this.coordText = this.game.Phaser.add.text(
 					this.originalDisplayPos.x + 45,
 					this.originalDisplayPos.y + 63,
@@ -514,7 +356,7 @@ export class Hex {
 					},
 				);
 				this.coordText.anchor.setTo(0.5, 0.5);
-				this.grid.overlayHexesGroup.add(this.coordText);
+				(this.grid as PhaserHexGrid).overlayHexesGroup.add(this.coordText);
 			}
 		} else if (this.coordText && this.coordText.exists) {
 			this.coordText.destroy();
@@ -532,86 +374,11 @@ export class Hex {
 				this.overlay.loadTexture(`hex_p${player}`);
 			}
 
-			this.grid.overlayHexesGroup.bringToTop(this.overlay);
+			(this.grid as PhaserHexGrid).overlayHexesGroup.bringToTop(this.overlay);
 		} else {
 			this.overlay.loadTexture('cancel');
 		}
 
 		this.overlay.alpha = targetAlpha ? 1 : 0;
 	}
-
-	/** Add a trap to a hex.
-	 * @param {string} type - name of sprite to use; see Phaser.load.image usage
-	 * @param {array} effects - effects to activate when trap triggered
-	 * @param {Object} owner - owner of trap
-	 * @param {Object} opt - optional arguments merged into the Trap object
-	 *
-	 * @returns {Trap} trap
-	 *
-	 * Examples:
-	 * - turnLifetime
-	 * - fullTurnLifetime
-	 * - ownerCreature
-	 * - destroyOnActivate
-	 * - typeOver
-	 */
-	createTrap(type, effects, owner, opt) {
-		if (this.trap) {
-			this.destroyTrap();
-		}
-
-		this.trap = new Trap(this.x, this.y, type, effects, owner, opt, this.game);
-		return this.trap;
-	}
-
-	activateTrap(trigger, target) {
-		if (!this.trap) {
-			return;
-		}
-
-		this.trap.effects.forEach((effect) => {
-			if (trigger.test(effect.trigger) && effect.requireFn()) {
-				this.game.log('Trap triggered');
-				effect.activate(target);
-			}
-		});
-
-		if (this.trap && this.trap.destroyOnActivate) {
-			this.destroyTrap();
-		}
-	}
-
-	destroyTrap() {
-		if (!this.trap) {
-			return;
-		}
-
-		delete this.grid.traps[this.trap.id];
-		this.trap.destroy();
-		delete this.trap;
-	}
-
-	//---------DROP FUNCTION---------//
-	pickupDrop(creature) {
-		if (!this.drop) {
-			return;
-		}
-
-		this.drop.pickup(creature);
-	}
-
-	/**
-	 * Override toJSON to avoid circular references when outputting to game log
-	 * Used by game log only
-	 *
-	 * @returns {Object} coordinates
-	 * @returns {number} coordinates.x
-	 * @returns {number} coordinates.y
-	 */
-	toJSON() {
-		return {
-			x: this.x,
-			y: this.y,
-		};
-	}
-} // End of Hex Class
+}

@@ -1,15 +1,15 @@
 import * as $j from 'jquery';
-import { Animations } from './animations';
+import { Animations } from './frontend/animations';
 import { CreatureQueue } from './creature_queue';
 import { GameLog } from './utility/gamelog';
 import { SoundSys } from './sound/soundsys';
 import { MusicPlayer } from './sound/musicplayer';
-import { Hex } from './utility/hex';
-import { HexGrid } from './utility/hexgrid';
+import { Hex } from './frontend/hex';
+import { HexGrid } from './frontend/hexgrid';
 import { getUrl } from './assetLoader';
 import { Player } from './player';
 import { UI } from './ui/interface';
-import { Creature } from './creature';
+import { Creature } from './frontend/creature';
 import dataJson from './data/units.json';
 import 'pixi';
 import 'p2';
@@ -17,6 +17,8 @@ import Phaser, { Signal } from 'phaser';
 import MatchI from './multiplayer/match';
 import Gameplay from './multiplayer/gameplay';
 import { sleep } from './utility/time';
+import { createPhaserHexGrid, PhaserHexGrid } from './frontend/phaser/phaser_hexgrid';
+import { PhaserAnimations } from './frontend/phaser/phaser_animations';
 
 /* Game Class
  *
@@ -67,7 +69,7 @@ export default class Game {
 		this.matchid = null;
 		this.playersReady = false;
 		this.preventSetup = false;
-		this.animations = new Animations(this);
+		this.animations = new PhaserAnimations(this);
 		this.queue = new CreatureQueue(this);
 		this.creatureIdCounter = 1;
 		this.creatureData = [];
@@ -451,7 +453,7 @@ export default class Game {
 		this.dropId = 0;
 		this.creatureIdCounter = 1;
 
-		this.grid = new HexGrid({}, this); // Create Hexgrid
+		this.grid = createPhaserHexGrid({}, this); // Create Hexgrid
 
 		this.startMatchTime = new Date();
 
@@ -550,7 +552,8 @@ export default class Game {
 			resizeGame();
 		});
 
-		this.soundsys.playMusic();
+		// TODO: enable me later
+		// this.soundsys.playMusic();
 		if (this.gamelog.data) {
 			// TODO: Remove the need for a timeout here by having a proper
 			// "game is ready to play" event that can trigger log replays if
@@ -734,7 +737,8 @@ export default class Game {
 
 				// Play heartbeat sound on other player's turn
 				if (differentPlayer) {
-					this.soundsys.playSound(this.soundLoaded[4], this.soundsys.heartbeatGainNode);
+					// TODO: enable me later
+					// this.soundsys.playSound(this.soundLoaded[4], this.soundsys.heartbeatGainNode);
 				}
 
 				this.log('Active Creature : %CreatureName' + this.activeCreature.id + '%');
@@ -1528,7 +1532,7 @@ export default class Game {
 		this.matchid = null;
 		this.playersReady = false;
 		this.preventSetup = false;
-		this.animations = new Animations(this);
+		this.animations = new PhaserAnimations(this);
 		this.queue = new CreatureQueue(this);
 		this.creatureIdCounter = 1;
 		this.creatureData = [];
