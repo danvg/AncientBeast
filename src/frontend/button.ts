@@ -1,5 +1,5 @@
 import $j from 'jquery';
-import Game from '../game';
+import { Game } from '../game';
 
 export enum ButtonStateEnum {
     normal = 'normal',
