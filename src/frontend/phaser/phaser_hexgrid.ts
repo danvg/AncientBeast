@@ -1,15 +1,17 @@
 import $j from 'jquery';
 import { Creature } from "../creature";
-import Game from "../../game";
+import { Game } from "../../game";
 import { Team, isTeam } from "../../utility/team";
 import { HexGrid } from "../hexgrid";
 import * as arrayUtils from '../../utility/arrayUtils';
 import { Hex } from "../hex";
 import { PhaserHex } from "./phaser_hex";
+import { PhaserCreature } from './phaser_creature';
+import { PhaserGame } from './phaser_game';
 
 export class PhaserHexGrid extends HexGrid {
 
-	display: Phaser.Sprite;
+	display: Phaser.Group;
 	gridGroup: Phaser.Group;
 	trapGroup: Phaser.Group;
 	hexesGroup: Phaser.Group;
@@ -21,8 +23,10 @@ export class PhaserHexGrid extends HexGrid {
 	trapOverGroup: Phaser.Group;
 	materialize_overlay: any;
 
-	constructor(opts: any, game: Game) {
-		super(opts, game);
+	constructor(opts: any, game_: Game) {
+		super(opts, game_);
+
+		let game = game_ as PhaserGame;
 
 		this.display = game.Phaser.add.group(undefined, 'displayGroup');
 		this.display.x = 230;
@@ -701,8 +705,9 @@ export class PhaserHexGrid extends HexGrid {
 		for (let y = 0, leny = this.hexes.length; y < leny; y++) {
 			for (let i = 1, len = creatures.length; i < len; i++) {
 				if (creatures[i].y == y) {
-					this.creatureGroup.remove(creatures[i].grp);
-					this.creatureGroup.addAt(creatures[i].grp, index++);
+					const creature = creatures[i] as PhaserCreature;
+					this.creatureGroup.remove(creature.grp);
+					this.creatureGroup.addAt(creature.grp, index++);
 				}
 			}
 

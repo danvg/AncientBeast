@@ -1,5 +1,5 @@
 import $j from 'jquery';
-import Game from '../../game';
+import { Game } from '../../game';
 import { Ability } from '../ability';
 import { Creature } from '../creature';
 import { Hex } from '../hex';
@@ -8,6 +8,7 @@ import { PhaserHex } from './phaser_hex';
 import { PhaserHexGrid } from './phaser_hexgrid';
 import * as arrayUtils from '../../utility/arrayUtils';
 import { PhaserDrop } from './phaser_drops';
+import { PhaserGame } from './phaser_game';
 
 export class PhaserCreature extends Creature {
 	display: any;
@@ -18,8 +19,10 @@ export class PhaserCreature extends Creature {
 	healthIndicatorSprite: Phaser.Sprite;
 	sprite: Phaser.Sprite;
 
-	constructor(obj: any, game: Game) {
-		super(obj, game);
+	constructor(obj: any, game_: Game) {
+		super(obj, game_);
+
+		let game = game_ as PhaserGame;
 
 		this.display = obj.display;
 
@@ -88,7 +91,7 @@ export class PhaserCreature extends Creature {
 		this.healthIndicatorText = game.Phaser.add.text(
 			this.player.flipped ? 45 : 45 + 90 * (this.size - 1),
 			63,
-			this.health,
+			this.health.toString(),
 			{
 				font: 'bold 15pt Play',
 				fill: '#fff',
@@ -104,7 +107,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	summon(disableMaterializationSickness: boolean): void {
-		let game = this.game;
+		let game = this.game as PhaserGame;
 
 		/* Without Sickness the creature should act in the current turn, except the dark
 		priest who must always be in the next queue to properly start the game. */
@@ -613,7 +616,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	hint(text: string, cssClass?: string): void {
-		let game = this.game,
+		let game = this.game as PhaserGame,
 			tooltipSpeed = 250,
 			tooltipDisplaySpeed = 500,
 			tooltipTransition = Phaser.Easing.Linear.None;
@@ -681,9 +684,11 @@ export class PhaserCreature extends Creature {
 		hint.anchor.setTo(0.5, 0.5);
 
 		hint.alpha = 0;
+		// @ts-ignore
 		hint.cssClass = cssClass;
 
 		if (cssClass == 'confirm') {
+			// @ts-ignore
 			hint.tweenAlpha = game.Phaser.add
 				.tween(hint)
 				.to(
@@ -695,6 +700,7 @@ export class PhaserCreature extends Creature {
 				)
 				.start();
 		} else {
+			// @ts-ignore
 			hint.tweenAlpha = game.Phaser.add
 				.tween(hint)
 				.to(
@@ -719,6 +725,7 @@ export class PhaserCreature extends Creature {
 					tooltipTransition,
 				)
 				.start();
+			// @ts-ignore
 			hint.tweenAlpha.onComplete.add(function () {
 				// @ts-ignore is this a bug? where is this.destroy() defined
 				hint.destroy();
@@ -754,7 +761,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	die(killer: any): void {
-		let game = this.game;
+		let game = this.game as PhaserGame;
 
 		game.log('%CreatureName' + this.id + '% is dead');
 
@@ -886,7 +893,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	xray(enable: boolean): void {
-		let game = this.game;
+		let game = this.game as PhaserGame;
 
 		if (enable) {
 			game.Phaser.add

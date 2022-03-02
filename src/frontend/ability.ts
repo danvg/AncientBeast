@@ -1,5 +1,5 @@
 import $j from 'jquery';
-import Game from '../game';
+import { Game } from '../game';
 import { Creature } from './creature';
 import { Direction, Hex } from './hex';
 import { Damage } from '../damage';
@@ -23,8 +23,10 @@ export abstract class Ability {
 	requirements: any;
 	costs: any;
 	trigger: string;
-	triggerFunc: any;
+	triggerFunc: Function;
 	message: any;
+
+	require: Function;
 
 	constructor(creature: Creature, abilityID: number, game: Game) {
 		this.creature = creature;
@@ -114,13 +116,13 @@ export abstract class Ability {
 		if (this.trigger !== undefined) {
 			return this.trigger;
 		} else if (this.triggerFunc !== undefined) {
-			return this.triggerFunc;
+			return this.triggerFunc.bind(this);
 		}
 
 		return undefined;
 	}
 
-	getTriggerStr() {
+	getTriggerStr(): string {
 		let s = '';
 		let trigger = this.getTrigger();
 
@@ -254,7 +256,7 @@ export abstract class Ability {
 	 * Animate the creature
 	 * @return {void}
 	 */
-	abstract animation(): void | boolean;
+	abstract animation(...args: any[]): void | boolean;
 
 	/**
 	 * Helper to animation method.
