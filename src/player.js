@@ -1,6 +1,6 @@
 import * as $j from 'jquery';
 import { getUrl } from './assetLoader';
-import { PhaserCreature } from './frontend/phaser/phaser_creature';
+import { PhaserCreature } from './game_engines/phaser/phaser_creature';
 
 /**
  * Player Class

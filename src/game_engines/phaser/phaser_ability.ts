@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import $j from 'jquery';
 import { Game } from '../../game';
-import { Ability } from '../ability';
-import { Creature } from '../creature';
-import { Hex } from '../hex';
+import { Ability } from '../../ability';
+import { Creature } from '../../creature';
+import { Hex } from '../../utility/hex';
 import { PhaserCreature } from './phaser_creature';
 import { PhaserGame } from './phaser_game';
 
@@ -18,14 +20,14 @@ export class PhaserAbility extends Ability {
 	 * Animate the creature
 	 * @return {void}
 	 */
-	animation(... arg_vars: any[]): void | boolean {
-		let game = this.game;
+	animation(...arg_vars: any[]): void | boolean {
+		const game = this.game;
 		// Gamelog Event Registration
 
 		const triggerStr = this.getTriggerStr();
 		if (triggerStr && game.triggers.onQuery.test(triggerStr)) {
 			if (arg_vars[0] instanceof Hex) {
-				let args = $j.extend({}, arg_vars);
+				const args = $j.extend({}, arg_vars);
 				delete args[0];
 				game.gamelog.add({
 					action: 'ability',
@@ -51,7 +53,7 @@ export class PhaserAbility extends Ability {
 			}
 
 			if (arg_vars[0] instanceof Creature) {
-				let args = $j.extend({}, arg_vars);
+				const args = $j.extend({}, arg_vars);
 				delete args[0];
 				game.gamelog.add({
 					action: 'ability',
@@ -75,10 +77,10 @@ export class PhaserAbility extends Ability {
 			}
 
 			if (arg_vars[0] instanceof Array) {
-				let args = $j.extend({}, arg_vars);
+				const args = $j.extend({}, arg_vars);
 				delete args[0];
 
-				let array = arg_vars[0].map((item) => ({ x: item.x, y: item.y }));
+				const array = arg_vars[0].map((item) => ({ x: item.x, y: item.y }));
 
 				game.gamelog.add({
 					action: 'ability',
@@ -102,7 +104,6 @@ export class PhaserAbility extends Ability {
 			}
 		} else {
 			// Test for materialization sickness
-			// @ts-ignore
 			if (this.creature.materializationSickness && this.affectedByMatSickness) {
 				return false;
 			}
@@ -118,7 +119,7 @@ export class PhaserAbility extends Ability {
 	 * @param {Object} o Animation object to extend.
 	 * @return {void}
 	 */
-	animation2(o: Object): void {
+	animation2(o: any): void {
 		const game = this.game as PhaserGame;
 		const opt = $j.extend(
 			{
@@ -132,7 +133,6 @@ export class PhaserAbility extends Ability {
 		const args = opt.arg;
 		const activateAbility = () => {
 			const extra = args[2];
-			// @ts-ignore
 			this.activate(args[0], args[1], extra);
 			this.postActivate();
 		};
@@ -140,7 +140,7 @@ export class PhaserAbility extends Ability {
 		game.freezedInput = true;
 
 		// Animate
-		let p0 = (this.creature as PhaserCreature).sprite.x;
+		const p0 = (this.creature as PhaserCreature).sprite.x;
 		let p1 = p0;
 		let p2 = p0;
 
@@ -154,7 +154,7 @@ export class PhaserAbility extends Ability {
 			if (args[0] instanceof Creature) {
 				this.creature.faceHex(args[0]);
 			} else if (args[0] instanceof Array) {
-				for (var argument of args[0]) {
+				for (const argument of args[0]) {
 					if (argument instanceof Creature || argument.creature) {
 						this.creature.faceHex(argument);
 					}
@@ -163,7 +163,7 @@ export class PhaserAbility extends Ability {
 		}
 		// Play animations and sounds only for active abilities
 		if (this.getTrigger() === 'onQuery') {
-			let animId = Math.random();
+			const animId = Math.random();
 
 			game.animationQueue.push(animId);
 
@@ -173,9 +173,7 @@ export class PhaserAbility extends Ability {
 				activateAnimation: true,
 			};
 
-			// @ts-ignore
 			if (this.getAnimationData) {
-				// @ts-ignore
 				animationData = $j.extend(animationData, this.getAnimationData(...args));
 			}
 
@@ -196,7 +194,7 @@ export class PhaserAbility extends Ability {
 			}, animationData.delay);
 
 			setTimeout(() => {
-				let queue = game.animationQueue.filter((item) => item != animId);
+				const queue = game.animationQueue.filter((item) => item != animId);
 
 				if (queue.length === 0) {
 					game.freezedInput = false;
@@ -214,7 +212,7 @@ export class PhaserAbility extends Ability {
 			}
 		}
 
-		let interval = setInterval(() => {
+		const interval = setInterval(() => {
 			if (!game.freezedInput) {
 				clearInterval(interval);
 				opt.callback();

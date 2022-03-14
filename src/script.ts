@@ -5,7 +5,7 @@ import dataJson from './data/units.json';
 import { Fullscreen } from './ui/fullscreen';
 
 import { Game } from './game';
-import { PhaserGame } from './frontend/phaser/phaser_game';
+import { PhaserGame } from './game_engines/phaser/phaser_game';
 
 import Connect from './multiplayer/connect';
 import Authenticate from './multiplayer/authenticate';

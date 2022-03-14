@@ -1,4 +1,4 @@
-import { Trap } from '../trap';
+import { Trap } from '../../utility/trap';
 import { Game } from '../../game';
 import { Effect } from '../../effect';
 import { PhaserHexGrid } from './phaser_hexgrid';

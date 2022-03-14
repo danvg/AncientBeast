@@ -1,5 +1,7 @@
-import { Creature } from './creature';
-import { Drop } from './drops';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { Creature } from '../creature';
+import { Drop } from '../drops';
 import { Game } from '../game';
 import { Trap } from './trap';
 import { HexGrid } from './hexgrid';
@@ -181,12 +183,7 @@ export abstract class Hex {
 	 * @param ignoreReachable Take into account the reachable property.
 	 * @returns True if this hex is walkable.
 	 */
-	isWalkable(
-		size: number,
-		id: number,
-		ignoreReachable: boolean = false,
-		debug: boolean = false,
-	): boolean {
+	isWalkable(size: number, id: number, ignoreReachable = false, debug = false): boolean {
 		let blocked = false;
 
 		for (let i = 0; i < size; i++) {
@@ -267,8 +264,7 @@ export abstract class Hex {
 			return;
 		}
 
-		this.trap.effects.forEach((effect) => {
-			// @ts-ignore
+		this.trap.effects.forEach((effect: Effect) => {
 			if (trigger.test(effect.trigger) && effect.requireFn()) {
 				this.game.log('Trap triggered');
 				effect.activate(target);
@@ -291,7 +287,7 @@ export abstract class Hex {
 	}
 
 	//---------DROP FUNCTION---------//
-	pickupDrop(creature) {
+	pickupDrop(creature: Creature) {
 		if (!this.drop) {
 			return;
 		}

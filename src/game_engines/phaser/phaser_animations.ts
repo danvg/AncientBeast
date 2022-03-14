@@ -1,14 +1,25 @@
-import * as $j from 'jquery';
-import * as arrayUtils from './utility/arrayUtils';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-export class Animations {
-	constructor(game) {
-		this.game = game;
-		this.movementPoints = 0;
+import $j from 'jquery';
+import * as arrayUtils from '../../utility/arrayUtils';
+import { Game } from '../../game';
+import { Animations } from '../../animations';
+import Phaser from 'phaser-ce';
+import { PhaserHexGrid } from './phaser_hexgrid';
+import { PhaserGame } from './phaser_game';
+import { Creature } from '../../creature';
+import { PhaserCreature } from './phaser_creature';
+import { Hex } from '../../utility/hex';
+
+export class PhaserAnimations extends Animations {
+	phaser: Phaser;
+
+	constructor(game: Game) {
+		super(game);
 	}
 
-	walk(creature, path, opts) {
-		let game = this.game;
+	walk(creature: Creature, path: Hex[], opts: any): void {
+		const game = this.game as PhaserGame;
 
 		if (opts.customMovementPoint > 0) {
 			path = path.slice(0, opts.customMovementPoint);
@@ -19,15 +30,15 @@ export class Animations {
 
 		game.freezedInput = true;
 
-		let animId = Math.random();
+		const animId = Math.random();
 		game.animationQueue.push(animId);
 
 		let hexId = 0;
 
 		creature.healthHide();
 
-		let anim = function () {
-			let hex = path[hexId];
+		const anim = function (this: PhaserAnimations) {
+			const hex = path[hexId];
 
 			if (hexId < path.length && (creature.remainingMove > 0 || opts.ignoreMovementPoint)) {
 				this.leaveHex(creature, hex, opts);
@@ -36,16 +47,16 @@ export class Animations {
 				return;
 			}
 
-			let nextPos = game.grid.hexes[hex.y][hex.x - creature.size + 1];
-			let speed = !opts.overrideSpeed ? creature.animation.walk_speed : opts.overrideSpeed;
+			const nextPos = game.grid.hexes[hex.y][hex.x - creature.size + 1];
+			const speed = !opts.overrideSpeed ? creature.animation.walk_speed : opts.overrideSpeed;
 
-			let tween = game.Phaser.add
-				.tween(creature.grp)
+			const tween = game.Phaser.add
+				.tween((creature as PhaserCreature).grp)
 				.to(nextPos.displayPos, parseInt(speed, 10), Phaser.Easing.Linear.None)
 				.start();
 
 			// Ignore traps for hover creatures, unless this is the last hex
-			let enterHexOpts = $j.extend(
+			const enterHexOpts = $j.extend(
 				{
 					ignoreTraps: creature.movementType() !== 'normal' && hexId < path.length - 1,
 				},
@@ -72,7 +83,7 @@ export class Animations {
 
 				this.enterHex(creature, hex, enterHexOpts);
 
-				anim(); // Next tween
+				anim(this); // Next tween
 			});
 
 			hexId++;
@@ -81,8 +92,8 @@ export class Animations {
 		anim();
 	}
 
-	fly(creature, path, opts) {
-		let game = this.game;
+	fly(creature: any, path: Hex[], opts: any): void {
+		const game = this.game as PhaserGame;
 
 		if (opts.customMovementPoint > 0) {
 			path = path.slice(0, opts.customMovementPoint);
@@ -93,21 +104,21 @@ export class Animations {
 
 		game.freezedInput = true;
 
-		let animId = Math.random();
+		const animId = Math.random();
 		game.animationQueue.push(animId);
 
 		creature.healthHide();
 
-		let hex = path[0];
+		const hex = path[0];
 
-		let start = game.grid.hexes[creature.y][creature.x - creature.size + 1];
-		let currentHex = game.grid.hexes[hex.y][hex.x - creature.size + 1];
+		const start = game.grid.hexes[creature.y][creature.x - creature.size + 1];
+		const currentHex = game.grid.hexes[hex.y][hex.x - creature.size + 1];
 
 		this.leaveHex(creature, currentHex, opts);
 
-		let speed = !opts.overrideSpeed ? creature.animation.walk_speed : opts.overrideSpeed;
+		const speed = !opts.overrideSpeed ? creature.animation.walk_speed : opts.overrideSpeed;
 
-		let tween = game.Phaser.add
+		const tween = game.Phaser.add
 			.tween(creature.grp)
 			.to(currentHex.displayPos, parseInt(speed, 10), Phaser.Easing.Linear.None)
 			.start();
@@ -140,19 +151,19 @@ export class Animations {
 		});
 	}
 
-	teleport(creature, path, opts) {
-		let game = this.game,
+	teleport(creature: Creature, path: Hex[], opts: any): void {
+		const game = this.game as PhaserGame,
 			hex = path[0],
 			currentHex = game.grid.hexes[hex.y][hex.x - creature.size + 1];
 
 		this.leaveHex(creature, currentHex, opts);
 
-		let animId = Math.random();
+		const animId = Math.random();
 		game.animationQueue.push(animId);
 
 		// FadeOut
-		let tween = game.Phaser.add
-			.tween(creature.grp)
+		const tween = game.Phaser.add
+			.tween((creature as PhaserCreature).grp)
 			.to(
 				{
 					alpha: 0,
@@ -167,12 +178,12 @@ export class Animations {
 			game.soundsys.playSound(game.soundLoaded[0], game.soundsys.effectsGainNode);
 
 			// position
-			creature.grp.x = currentHex.displayPos.x;
-			creature.grp.y = currentHex.displayPos.y;
+			(creature as PhaserCreature).grp.x = currentHex.displayPos.x;
+			(creature as PhaserCreature).grp.y = currentHex.displayPos.y;
 
 			// FadeIn
 			game.Phaser.add
-				.tween(creature.grp)
+				.tween((creature as PhaserCreature).grp)
 				.to(
 					{
 						alpha: 1,
@@ -188,81 +199,20 @@ export class Animations {
 		});
 	}
 
-	push(creature, path, opts) {
-		opts.pushed = true;
-		this.walk(creature, path, opts);
-	}
-
-	//--------Special Functions---------//
-
-	enterHex(creature, hex, opts) {
-		let game = this.game;
-
-		creature.cleanHex();
-		creature.x = hex.x - 0;
-		creature.y = hex.y - 0;
-		creature.pos = hex.pos;
-		creature.updateHex();
-
-		game.onStepIn(creature, hex, opts);
-
-		creature.pickupDrop();
-
-		opts.callbackStepIn(hex);
-
-		game.grid.orderCreatureZ();
-	}
-
-	leaveHex(creature, hex, opts) {
-		let game = this.game;
-
-		if (!opts.pushed) {
-			creature.faceHex(hex, creature.hexagons[0]); // Determine facing
-		}
-
-		game.onStepOut(creature, creature.hexagons[0]); // Trigger
-		game.grid.orderCreatureZ();
-	}
-
-	movementComplete(creature, hex, animId, opts) {
-		let game = this.game;
-
-		if (opts.customMovementPoint > 0) {
-			creature.remainingMove = this.movementPoints;
-		}
-
-		// TODO: Turn around animation
-		if (opts.turnAroundOnComplete) {
-			creature.facePlayerDefault();
-		}
-
-		// TODO: Reveal health indicator
-		creature.healthShow();
-
-		creature.hexagons.forEach((h) => {
-			h.pickupDrop(creature);
-		});
-
-		game.grid.orderCreatureZ();
-
-		let queue = game.animationQueue.filter((item) => item != animId);
-
-		if (queue.length === 0) {
-			game.freezedInput = false;
-			if (game.multiplayer) {
-				game.freezedInput = game.UI.active ? false : true;
-			}
-		}
-
-		game.animationQueue = queue;
-	}
-
-	projectile(this2, target, spriteId, path, args, startX, startY) {
+	projectile(
+		this2: any,
+		target: any,
+		spriteId: any,
+		path: Hex[],
+		args: any,
+		startX: any,
+		startY: any,
+	): any[] {
 		// Get the target's position on the projectile's path that is closest
-		let emissionPointX = this2.creature.grp.x + startX;
-		var distance = Number.MAX_SAFE_INTEGER;
-		var targetX = path[0].displayPos.x;
-		for (let hex of path) {
+		const emissionPointX = this2.creature.grp.x + startX;
+		let distance = Number.MAX_SAFE_INTEGER;
+		let targetX = path[0].displayPos.x;
+		for (const hex of path) {
 			if (typeof hex.creature != 'undefined' && hex.creature.id == target.id) {
 				if (distance > Math.abs(emissionPointX - hex.displayPos.x)) {
 					distance = Math.abs(emissionPointX - hex.displayPos.x);
@@ -270,7 +220,7 @@ export class Animations {
 				}
 			}
 		}
-		let game = this.game,
+		const game = this.game as PhaserGame,
 			baseDist = arrayUtils.filterCreature(path.slice(0), false, false).length,
 			dist = baseDist == 0 ? 1 : baseDist,
 			emissionPoint = {
@@ -282,12 +232,16 @@ export class Animations {
 				y: path[baseDist].displayPos.y - 20,
 			},
 			// Sprite id here
-			sprite = game.grid.creatureGroup.create(emissionPoint.x, emissionPoint.y, spriteId),
+			sprite = (game.grid as PhaserHexGrid).creatureGroup.create(
+				emissionPoint.x,
+				emissionPoint.y,
+				spriteId,
+			),
 			duration = dist * 75;
 
 		sprite.anchor.setTo(0.5);
 		sprite.rotation = -Math.PI / 3 + (args.direction * Math.PI) / 3;
-		let tween = game.Phaser.add
+		const tween = game.Phaser.add
 			.tween(sprite)
 			.to(
 				{
@@ -300,5 +254,16 @@ export class Animations {
 			.start();
 
 		return [tween, sprite, dist];
+	}
+
+	callMethodByStr(str: string, creature: Creature, path: Hex[], opts: any) {
+		if (str === 'walk') this.walk(creature, path, opts);
+		if (str === 'fly') return this.fly(creature, path, opts);
+		if (str === 'teleport') return this.teleport(creature, path, opts);
+		if (str === 'enterHex') return this.enterHex(creature, path[0], opts);
+		if (str === 'enterHex') return this.leaveHex(creature, path[0], opts);
+		return () => {
+			console.log(`Animation not recognized: ${str}`);
+		};
 	}
 }

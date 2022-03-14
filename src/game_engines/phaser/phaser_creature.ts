@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import $j from 'jquery';
 import { Game } from '../../game';
-import { Ability } from '../ability';
-import { Creature } from '../creature';
-import { Hex } from '../hex';
+import { Ability } from '../../ability';
+import { Creature } from '../../creature';
+import { Hex } from '../../utility/hex';
 import { PhaserAbility } from './phaser_ability';
 import { PhaserHex } from './phaser_hex';
 import { PhaserHexGrid } from './phaser_hexgrid';
@@ -22,7 +24,7 @@ export class PhaserCreature extends Creature {
 	constructor(obj: any, game_: Game) {
 		super(obj, game_);
 
-		let game = game_ as PhaserGame;
+		const game = game_ as PhaserGame;
 
 		this.display = obj.display;
 
@@ -53,7 +55,7 @@ export class PhaserCreature extends Creature {
 			}
 		}
 
-		let grid: PhaserHexGrid = game.grid as PhaserHexGrid;
+		const grid: PhaserHexGrid = game.grid as PhaserHexGrid;
 
 		// Creature Container
 		this.grp = game.Phaser.add.group(grid.creatureGroup, 'creatureGrp_' + this.id);
@@ -107,7 +109,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	summon(disableMaterializationSickness: boolean): void {
-		let game = this.game as PhaserGame;
+		const game = this.game as PhaserGame;
 
 		/* Without Sickness the creature should act in the current turn, except the dark
 		priest who must always be in the next queue to properly start the game. */
@@ -179,12 +181,12 @@ export class PhaserCreature extends Creature {
 		this.oldHealth = this.health;
 		this.noActionPossible = false;
 
-		let game = this.game;
-		let stats = this.stats;
+		const game = this.game;
+		const stats = this.stats;
 
-		let self: PhaserCreature = this;
+		const self: PhaserCreature = this;
 
-		let varReset = function () {
+		const varReset = function () {
 			self.game.onReset(self);
 			// Variables reset
 			self.updateAlteration();
@@ -224,7 +226,7 @@ export class PhaserCreature extends Creature {
 		// Frozen or dizzy effect
 		if (this.isFrozen() || this.isDizzy()) {
 			varReset();
-			let interval = setInterval(() => {
+			const interval = setInterval(() => {
 				if (!game.turnThrottle) {
 					clearInterval(interval);
 					game.skipTurn({
@@ -244,7 +246,7 @@ export class PhaserCreature extends Creature {
 
 		this.materializationSickness = false;
 
-		let interval = setInterval(() => {
+		const interval = setInterval(() => {
 			// if (!game.freezedInput) { remove for muliplayer
 			clearInterval(interval);
 			if (game.turn >= game.minimumTurnBeforeFleeing) {
@@ -258,7 +260,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	queryMove(o?: any): void {
-		let game = this.game;
+		const game = this.game;
 
 		if (this.dead) {
 			// Creatures can die during their turns from trap effects; make sure this
@@ -355,25 +357,25 @@ export class PhaserCreature extends Creature {
 			o.range = game.grid.getFlyingRange(this.x, this.y, remainingMove, this.size, this.id);
 		}
 
-		let selectNormal = function (hex: Hex, args: any) {
+		const selectNormal = function (hex: Hex, args: any) {
 			args.creature.tracePath(hex);
 		};
-		let selectFlying = function (hex: Hex, args: any) {
+		const selectFlying = function (hex: Hex, args: any) {
 			args.creature.tracePosition({
 				x: hex.x,
 				y: hex.y,
 				overlayClass: 'creature moveto selected player' + args.creature.team,
 			});
 		};
-		let select = o.noPath || this.movementType() === 'flying' ? selectFlying : selectNormal;
+		const select = o.noPath || this.movementType() === 'flying' ? selectFlying : selectNormal;
 
 		if (this.noActionPossible) {
 			game.grid.querySelf({
 				fnOnConfirm: function () {
-					// @ts-ignore
 					game.UI.btnSkipTurn.click();
 				},
-				fnOnCancel: function () {},
+				// eslint-disable-next-line @typescript-eslint/no-empty-function
+				fnOnCancel: function () { },
 				confirmText: 'Skip turn',
 			});
 		} else {
@@ -395,7 +397,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	previewPosition(hex: Hex): void {
-		let game = this.game;
+		const game = this.game;
 
 		(game.grid as PhaserHexGrid).cleanOverlay('hover h_player' + this.team);
 		if (!game.grid.hexes[hex.y][hex.x].isWalkable(this.size, this.id)) {
@@ -485,29 +487,30 @@ export class PhaserCreature extends Creature {
 	}
 
 	moveTo(hex: Hex, opts: any): void {
-		let game = this.game,
-			defaultOpt = {
-				callback: function () {
-					return true;
-				},
-				callbackStepIn: function () {
-					return true;
-				},
-				animation: this.movementType() === 'flying' ? 'fly' : 'walk',
-				ignoreMovementPoint: false,
-				ignorePath: false,
-				customMovementPoint: 0,
-				overrideSpeed: 0,
-				turnAroundOnComplete: true,
+		const game = this.game;
+		const defaultOpt = {
+			callback: function () {
+				return true;
 			},
-			path: any;
+			callbackStepIn: function () {
+				return true;
+			},
+			animation: this.movementType() === 'flying' ? 'fly' : 'walk',
+			ignoreMovementPoint: false,
+			ignorePath: false,
+			customMovementPoint: 0,
+			overrideSpeed: 0,
+			turnAroundOnComplete: true,
+		};
+
+		let path: any;
 
 		opts = $j.extend(defaultOpt, opts);
 
 		// Teleportation ignores moveable
 		if (this.stats.moveable || opts.animation === 'teleport') {
-			let x = hex.x;
-			let y = hex.y;
+			const x = hex.x;
+			const y = hex.y;
 
 			if (opts.ignorePath || opts.animation == 'fly') {
 				path = [hex];
@@ -528,7 +531,7 @@ export class PhaserCreature extends Creature {
 			game.log('This creature cannot be moved');
 		}
 
-		let interval = setInterval(() => {
+		const interval = setInterval(() => {
 			// Check if creature's movement animation is completely finished.
 			if (!game.freezedInput) {
 				clearInterval(interval);
@@ -540,7 +543,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	tracePath(hex: Hex): void {
-		let x = hex.x,
+		const x = hex.x,
 			y = hex.y,
 			path = this.calculatePath(x, y); // Store path in grid to be able to compare it later
 
@@ -558,7 +561,7 @@ export class PhaserCreature extends Creature {
 		}); // Trace path
 
 		// Highlight final position
-		let last = arrayUtils.last(path);
+		const last = arrayUtils.last(path);
 
 		this.tracePosition({
 			x: last.x,
@@ -569,7 +572,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	tracePosition(args: any): void {
-		let defaultArgs = {
+		const defaultArgs = {
 			x: this.x,
 			y: this.y,
 			overlayClass: '',
@@ -592,7 +595,7 @@ export class PhaserCreature extends Creature {
 				}
 			}
 			if (canDraw) {
-				let hex = this.game.grid.hexes[args.y][args.x - i] as PhaserHex;
+				const hex = this.game.grid.hexes[args.y][args.x - i] as PhaserHex;
 				this.game.grid.cleanHex(hex);
 				hex.overlayVisualState(args.overlayClass);
 				hex.displayVisualState(args.displayClass);
@@ -616,12 +619,12 @@ export class PhaserCreature extends Creature {
 	}
 
 	hint(text: string, cssClass?: string): void {
-		let game = this.game as PhaserGame,
+		const game = this.game as PhaserGame,
 			tooltipSpeed = 250,
 			tooltipDisplaySpeed = 500,
 			tooltipTransition = Phaser.Easing.Linear.None;
 
-		let hintColor = {
+		const hintColor = {
 			confirm: {
 				fill: '#ffffff',
 				stroke: '#000000',
@@ -642,7 +645,7 @@ export class PhaserCreature extends Creature {
 			},
 		};
 
-		let style = $j.extend(
+		const style = $j.extend(
 			{
 				font: 'bold 20pt Play',
 				fill: '#ff0000',
@@ -652,8 +655,6 @@ export class PhaserCreature extends Creature {
 			},
 			hintColor[cssClass],
 		);
-
-		let self: PhaserCreature = this;
 
 		// Remove constant element
 		this.hintGrp.forEach(
@@ -671,6 +672,7 @@ export class PhaserCreature extends Creature {
 						)
 						.start();
 					grpHintElem.tweenAlpha.onComplete.add(function () {
+						// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 						// @ts-ignore is this a bug? where is this.destroy() defined
 						grpHintElem.destroy();
 					}, grpHintElem);
@@ -680,14 +682,16 @@ export class PhaserCreature extends Creature {
 			true,
 		);
 
-		let hint = game.Phaser.add.text(0, 50, text, style);
+		const hint = game.Phaser.add.text(0, 50, text, style);
 		hint.anchor.setTo(0.5, 0.5);
 
 		hint.alpha = 0;
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		hint.cssClass = cssClass;
 
 		if (cssClass == 'confirm') {
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
 			hint.tweenAlpha = game.Phaser.add
 				.tween(hint)
@@ -700,6 +704,7 @@ export class PhaserCreature extends Creature {
 				)
 				.start();
 		} else {
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
 			hint.tweenAlpha = game.Phaser.add
 				.tween(hint)
@@ -725,8 +730,10 @@ export class PhaserCreature extends Creature {
 					tooltipTransition,
 				)
 				.start();
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
 			hint.tweenAlpha.onComplete.add(function () {
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore is this a bug? where is this.destroy() defined
 				hint.destroy();
 			}, hint);
@@ -737,8 +744,8 @@ export class PhaserCreature extends Creature {
 		// Stacking
 		this.hintGrp.forEach(
 			(grpHintElem: any) => {
-				let index = this.hintGrp.total - this.hintGrp.getIndex(grpHintElem) - 1;
-				let offset = -50 * index;
+				const index = this.hintGrp.total - this.hintGrp.getIndex(grpHintElem) - 1;
+				const offset = -50 * index;
 
 				if (grpHintElem.tweenPos) {
 					grpHintElem.tweenPos.stop();
@@ -761,7 +768,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	die(killer: any): void {
-		let game = this.game as PhaserGame;
+		const game = this.game as PhaserGame;
 
 		game.log('%CreatureName' + this.id + '% is dead');
 
@@ -771,12 +778,11 @@ export class PhaserCreature extends Creature {
 		game.onCreatureDeath(this);
 
 		this.killer = killer.player;
-		let isDeny = this.killer.flipped == this.player.flipped;
+		const isDeny = this.killer.flipped == this.player.flipped;
 
 		// Drop item
-		// @ts-ignore
 		if (game.unitDrops == 1 && this.drop) {
-			let offsetX = this.player.flipped ? this.x - this.size + 1 : this.x;
+			const offsetX = this.player.flipped ? this.x - this.size + 1 : this.x;
 			/* All properties aside from `name` are assumed to be alterations to the creature's
 			statistics. */
 			const { name, ...alterations } = this.drop;
@@ -827,9 +833,9 @@ export class PhaserCreature extends Creature {
 
 		if (this.player.isAnnihilated()) {
 			// Remove humiliation as annihilation is an upgrade
-			let total = this.killer.score.length;
+			const total = this.killer.score.length;
 			for (let i = 0; i < total; i++) {
-				let s = this.killer.score[i];
+				const s = this.killer.score[i];
 				if (s.type == 'humiliation') {
 					if (s.player == this.team) {
 						this.killer.score.splice(i, 1);
@@ -850,7 +856,7 @@ export class PhaserCreature extends Creature {
 		}
 
 		// Kill animation
-		let tweenSprite = game.Phaser.add
+		const tweenSprite = game.Phaser.add
 			.tween(this.sprite)
 			.to(
 				{
@@ -860,7 +866,7 @@ export class PhaserCreature extends Creature {
 				Phaser.Easing.Linear.None,
 			)
 			.start();
-		let tweenHealth = game.Phaser.add
+		const tweenHealth = game.Phaser.add
 			.tween(this.healthIndicatorGroup)
 			.to(
 				{
@@ -893,7 +899,7 @@ export class PhaserCreature extends Creature {
 	}
 
 	xray(enable: boolean): void {
-		let game = this.game as PhaserGame;
+		const game = this.game as PhaserGame;
 
 		if (enable) {
 			game.Phaser.add

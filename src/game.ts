@@ -1,19 +1,21 @@
-import { Animations } from './frontend/animations';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { Animations } from './animations';
 import { CreatureQueue } from './creature_queue';
 import { GameLog } from './utility/gamelog';
 import { SoundSys } from './sound/soundsys';
 import { MusicPlayer } from './sound/musicplayer';
-import { HexGrid } from './frontend/hexgrid';
+import { HexGrid } from './utility/hexgrid';
 import { Player } from './player';
 import { UI } from './ui/interface';
-import { Creature } from './frontend/creature';
+import { Creature } from './creature';
 import MatchI from './multiplayer/match';
 import Gameplay from './multiplayer/gameplay';
-import { Ability } from './frontend/ability';
+import { Ability } from './ability';
 import { Effect } from './effect';
 import SessionI from './multiplayer/session';
 import { Client } from '@heroiclabs/nakama-js';
-import { Hex } from './frontend/hex';
+import { Hex } from './utility/hex';
 
 /**
  * Game Class
@@ -48,7 +50,7 @@ export abstract class Game {
 	animationQueue: number[];
 	checkTimeFrequency: number;
 	gamelog: GameLog;
-	configData: {};
+	configData: any;
 	match: MatchI;
 	gameplay: Gameplay;
 	session: SessionI;
@@ -77,13 +79,15 @@ export abstract class Game {
 	dropId: number;
 	grid: HexGrid;
 	startMatchTime: Date;
-	$combatFrame: JQuery<HTMLElement>;
-	timeInterval: NodeJS.Timeout;
-	windowResizeTimeout: NodeJS.Timeout;
+	$combatFrame: any;
+	timeInterval: any;
+	windowResizeTimeout: any;
 	playerMode: number;
 	timePool: number;
 	turnTimePool: number;
 	endGameSound: any;
+	abilityUpgrades: number;
+	unitDrops: any;
 
 	/**
 	 * Attributes
@@ -112,7 +116,7 @@ export abstract class Game {
 	 * creatureData :		Array :		Array containing all data for the creatures
 	 *
 	 */
-	constructor(version?: string) {}
+	constructor(version?: string) { }
 
 	abstract dataLoaded(data: any): void;
 
@@ -245,29 +249,29 @@ export abstract class Game {
 	 *
 	 * Removed individual args from definition because we are using the arguments variable.
 	 */
-	abstract onStepOut(creature: Creature, hex: Hex, callback?: Function): void;
+	abstract onStepOut(creature: Creature, hex: Hex, callback?: any): void;
 
 	abstract onReset(creature: Creature): void;
 
 	// Removed individual args from definition because we are using the arguments variable.
-	abstract onStartPhase(creature: Creature, callback?: Function): void;
+	abstract onStartPhase(creature: Creature, callback?: any): void;
 
 	// Removed individual args from definition because we are using the arguments variable.
-	abstract onEndPhase(creature: Creature, callback?: Function): void;
+	abstract onEndPhase(creature: Creature, callback?: any): void;
 
 	// Removed individual args from definition because we are using the arguments variable.
-	abstract onStartOfRound(creature?: Creature, callback?: Function): void;
+	abstract onStartOfRound(creature?: Creature, callback?: any): void;
 
 	// Removed individual args from definition because we are using the arguments variable.
-	abstract onCreatureMove(creature: Creature, hex: Hex, callback?: Function): void;
+	abstract onCreatureMove(creature: Creature, hex: Hex, callback?: any): void;
 
 	// Removed individual args from definition because we are using the arguments variable.
-	abstract onCreatureDeath(creature: Creature, callback?: Function): void;
+	abstract onCreatureDeath(creature: Creature, callback?: any): void;
 
-	abstract onCreatureSummon(creature: Creature, callback?: Function): void;
+	abstract onCreatureSummon(creature: Creature, callback?: any): void;
 
 	// Removed individual args from definition because we are using the arguments variable.
-	abstract onEffectAttach(creature: Creature, effect: Effect, callback?: Function): void;
+	abstract onEffectAttach(creature: Creature, effect: Effect, callback?: any): void;
 
 	abstract onUnderAttack(creature: Creature, damage: any): any;
 

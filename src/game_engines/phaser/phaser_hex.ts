@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import $j from 'jquery';
 import { Creature } from '../../creature';
 import { Effect } from '../../effect';
 import { Game } from '../../game';
-import { Hex } from '../hex';
-import { HexGrid } from '../hexgrid';
-import { Trap } from '../trap';
+import { Hex } from '../../utility/hex';
+import { HexGrid } from '../../utility/hexgrid';
+import { Trap } from '../../utility/trap';
 import { PhaserGame } from './phaser_game';
 import { PhaserHexGrid } from './phaser_hexgrid';
 import { PhaserTrap } from './phaser_trap';
@@ -77,7 +79,7 @@ export class PhaserHex extends Hex {
 				this.onSelectFn(this);
 			}, this);
 
-			this.input.events.onInputOut.add((_, pointer) => {
+			this.input.events.onInputOut.add((_: any, pointer: any) => {
 				if (game.freezedInput || game.UI.dashopen || !pointer.withinGame) {
 					return;
 				}
@@ -86,7 +88,7 @@ export class PhaserHex extends Hex {
 				this.onHoverOffFn(this);
 			}, this);
 
-			this.input.events.onInputUp.add((Sprite, Pointer) => {
+			this.input.events.onInputUp.add((Sprite: any, Pointer: any) => {
 				if (game.freezedInput || game.UI.dashopen) {
 					return;
 				}
@@ -162,9 +164,9 @@ export class PhaserHex extends Hex {
 	 *
 	 * add ghosted class to creature on hexes behind this hex
 	 */
-	override ghostOverlap() {
+	ghostOverlap(): void {
 		const grid = this.grid || this.game.grid;
-		let ghostedCreature;
+		let ghostedCreature: Creature;
 
 		for (let i = 1; i <= 3; i++) {
 			if (this.y % 2 == 0) {
@@ -207,7 +209,7 @@ export class PhaserHex extends Hex {
 		}
 	}
 
-	override createTrap(type: string, effects: Effect[], owner: string, opt: any): Trap {
+	createTrap(type: string, effects: Effect[], owner: string, opt: any): Trap {
 		if (this.trap) {
 			this.destroyTrap();
 		}
@@ -230,9 +232,9 @@ export class PhaserHex extends Hex {
 	/**
 	 * Change the appearance of a display hex.
 	 *
-	 * @param {string} classes Display classes to be added to the Hex.
+	 * @param classes Display classes to be added to the Hex.
 	 */
-	displayVisualState(classes: string = '') {
+	displayVisualState(classes = ''): void {
 		this.displayClasses = `${this.displayClasses} ${classes}`.trim();
 		this.updateStyle();
 	}
@@ -242,7 +244,7 @@ export class PhaserHex extends Hex {
 	 *
 	 * Clear the appearance of the overlay hex
 	 */
-	cleanOverlayVisualState(classes: string = '') {
+	cleanOverlayVisualState(classes = ''): void {
 		classes =
 			classes ||
 			'creature weakDmg active moveto selected hover h_player0 h_player1 h_player2 h_player3 player0 player1 player2 player3';
@@ -261,7 +263,7 @@ export class PhaserHex extends Hex {
 	 *
 	 * Clear the appearance of the display hex
 	 */
-	cleanDisplayVisualState(classes: string = '') {
+	cleanDisplayVisualState(classes = ''): void {
 		classes = classes || 'adj hover creature player0 player1 player2 player3 dashed shrunken';
 		const a = classes.split(' ');
 

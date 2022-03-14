@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import $j from 'jquery';
 import { Ability } from './ability';
-import { Effect } from '../effect';
-import { Game } from '../game';
-import { Player } from '../player';
+import { Effect } from './effect';
+import { Game } from './game';
+import { Player } from './player';
 import { Drop } from './drops';
-import { Hex } from './hex';
-import { search } from '../utility/pathfinding';
-import * as arrayUtils from '../utility/arrayUtils';
+import { Hex } from './utility/hex';
+import { Animations } from './animations';
+import { search } from './utility/pathfinding';
+import * as arrayUtils from './utility/arrayUtils';
 
 export abstract class Creature {
 	game: Game;
@@ -31,7 +34,7 @@ export abstract class Creature {
 
 	level: number;
 	realm: string;
-	animation: string;
+	animation: Animations;
 	drop: Drop;
 	_movementType: string;
 
@@ -61,6 +64,7 @@ export abstract class Creature {
 	oldHealth: number;
 
 	undead: boolean;
+	playable: boolean;
 
 	constructor(obj: any, game: Game) {
 		// Engine
@@ -231,7 +235,7 @@ export abstract class Creature {
 	 *
 	 */
 	deactivate(wait: boolean): void {
-		let game = this.game;
+		const game = this.game;
 		this.delayed = Boolean(wait);
 		this.hasWait = this.delayed;
 		this.status.frozen = false;
@@ -272,7 +276,7 @@ export abstract class Creature {
 	}
 
 	delay(excludeActiveCreature: boolean): void {
-		let game = this.game;
+		const game = this.game;
 
 		game.queue.delay(this);
 		this.delayable = false;
@@ -319,8 +323,8 @@ export abstract class Creature {
 	 *
 	 */
 	updateHex() {
-		let count = this.size,
-			i: number;
+		const count = this.size;
+		let i: number;
 
 		for (i = 0; i < count; i++) {
 			this.hexagons.push(this.game.grid.hexes[this.y][this.x - i]);
@@ -383,7 +387,7 @@ export abstract class Creature {
 	 *
 	 */
 	calculatePath(x: number, y: number): Hex[] {
-		let game = this.game;
+		const game = this.game;
 
 		return search(
 			game.grid.hexes[this.y][this.x],
@@ -406,7 +410,7 @@ export abstract class Creature {
 	 *
 	 */
 	calcOffset(x: number, y: number): { x: number; y: number } {
-		let game = this.game,
+		const game = this.game,
 			offset = game.players[this.team].flipped ? this.size - 1 : 0,
 			mult = game.players[this.team].flipped ? 1 : -1; // For FLIPPED player
 
@@ -448,13 +452,13 @@ export abstract class Creature {
 	 *
 	 */
 	adjacentHexes(dist: number, clockwise?: Hex[]) {
-		let game = this.game;
+		const game = this.game;
 
 		// TODO Review this algo to allow distance
 		if (clockwise) {
-			let hexes = [],
-				c = [];
-			let o = this.y % 2 === 0 ? 1 : 0;
+			const hexes = [];
+			let c = [];
+			const o = this.y % 2 === 0 ? 1 : 0;
 
 			if (this.size == 1) {
 				c = [
@@ -567,7 +571,7 @@ export abstract class Creature {
 				];
 			}
 
-			let total = c.length;
+			const total = c.length;
 			for (let i = 0; i < total; i++) {
 				const { x, y } = c[i];
 				if (game.grid.hexExists(y, x)) {
@@ -579,8 +583,8 @@ export abstract class Creature {
 		}
 
 		if (this.size > 1) {
-			let hexes = this.hexagons[0].adjacentHex(dist);
-			let lasthexes = this.hexagons[this.size - 1].adjacentHex(dist);
+			const hexes = this.hexagons[0].adjacentHex(dist);
+			const lasthexes = this.hexagons[this.size - 1].adjacentHex(dist);
 
 			hexes.forEach((hex) => {
 				if (arrayUtils.findPos(this.hexagons, hex)) {
@@ -607,7 +611,7 @@ export abstract class Creature {
 	 * @return {void}
 	 * Restore energy up to the max limit
 	 */
-	recharge(amount: number, log: boolean = true): void {
+	recharge(amount: number, log = true): void {
 		this.energy = Math.min(this.stats.energy, this.energy + amount);
 
 		if (log) {
@@ -621,7 +625,7 @@ export abstract class Creature {
 	 *
 	 * @param {*} amount Number of endurance points to restore.
 	 */
-	restoreEndurance(amount: number, log: boolean = true): void {
+	restoreEndurance(amount: number, log = true): void {
 		this.endurance = Math.min(this.stats.endurance, this.endurance + amount);
 
 		if (log) {
@@ -635,7 +639,7 @@ export abstract class Creature {
 	 *
 	 * @param {*} amount Number of movement points to restore.
 	 */
-	restoreMovement(amount: number, log: boolean = true): void {
+	restoreMovement(amount: number, log = true): void {
 		this.remainingMove = Math.min(this.stats.movement, this.remainingMove + amount);
 
 		if (log) {
@@ -648,8 +652,8 @@ export abstract class Creature {
 	 *
 	 * amount :	Damage :	Amount of health point to restore
 	 */
-	heal(amount: number, isRegrowth: boolean, log: boolean = true): void {
-		let game = this.game;
+	heal(amount: number, isRegrowth: boolean, log = true): void {
+		const game = this.game;
 		// Cap health point
 		amount = Math.min(amount, this.stats.health - this.health);
 
@@ -701,14 +705,14 @@ export abstract class Creature {
 	 * return :	Object :	Contains damages dealt and if creature is killed or not
 	 */
 	takeDamage(damage: any, o: any): any {
-		let game = this.game;
+		const game = this.game;
 
 		if (this.dead) {
 			console.info(`${this.name} (${this.id}) is already dead, aborting takeDamage call.`);
 			return;
 		}
 
-		let defaultOpt = {
+		const defaultOpt = {
 			ignoreRetaliation: false,
 			isFromTrap: false,
 		};
@@ -732,8 +736,8 @@ export abstract class Creature {
 		// Calculation
 		if (damage.status === '') {
 			// Damages
-			let dmg = damage.applyDamage();
-			let dmgAmount = dmg.total;
+			const dmg = damage.applyDamage();
+			const dmgAmount = dmg.total;
 
 			if (!isFinite(dmgAmount)) {
 				// Check for Damage Errors
@@ -752,7 +756,7 @@ export abstract class Creature {
 			this.addFatigue(dmgAmount);
 
 			// Display
-			let nbrDisplayed = dmgAmount ? '-' + dmgAmount : 0;
+			const nbrDisplayed = dmgAmount ? '-' + dmgAmount : 0;
 			this.hint(nbrDisplayed.toString(), 'damage d' + dmgAmount);
 
 			if (!damage.noLog) {
@@ -833,7 +837,7 @@ export abstract class Creature {
 	}
 
 	updateHealth(noAnimBar?: boolean): void {
-		let game = this.game;
+		const game = this.game;
 
 		if (this == game.activeCreature && !noAnimBar) {
 			game.UI.healthBar.animSize(this.health / this.stats.health);
@@ -877,12 +881,11 @@ export abstract class Creature {
 		effect: Effect,
 		specialString?: string,
 		specialHint?: string,
-		disableLog: boolean = false,
-		disableHint: boolean = false,
+		disableLog = false,
+		disableHint = false,
 	): boolean {
-		let game = this.game;
+		const game = this.game;
 
-		// @ts-ignore
 		if (!effect.stackable && this.findEffect(effect.name).length !== 0) {
 			return false;
 		}
@@ -896,7 +899,6 @@ export abstract class Creature {
 
 		if (effect.name !== '') {
 			if (!disableHint) {
-				// @ts-ignore
 				if (specialHint || effect.specialHint) {
 					this.hint(specialHint, 'msg_effects');
 				} else {
@@ -924,7 +926,6 @@ export abstract class Creature {
 	 * @return {void}
 	 */
 	replaceEffect(effect: Effect): void {
-		// @ts-ignore
 		if (!effect.stackable && this.findEffect(effect.name).length !== 0) {
 			this.removeEffect(effect.name);
 		}
@@ -940,7 +941,7 @@ export abstract class Creature {
 	 * @return {void}
 	 */
 	removeEffect(name: string): void {
-		let totalEffects = this.effects.length;
+		const totalEffects = this.effects.length;
 
 		for (let i = 0; i < totalEffects; i++) {
 			if (this.effects[i].name === name) {
@@ -961,7 +962,7 @@ export abstract class Creature {
 	updateAlteration(): void {
 		this.stats = { ...this.baseStats };
 
-		let buffDebuffArray = [...this.effects, ...this.dropCollection];
+		const buffDebuffArray = [...this.effects, ...this.dropCollection];
 
 		buffDebuffArray.forEach((buff: any) => {
 			$j.each(buff.alterations, (key, value) => {
@@ -1026,7 +1027,7 @@ export abstract class Creature {
 	 * shortcut convenience function to grid.getHexMap
 	 */
 	getHexMap(map: any, invertFlipped: boolean): Hex[] {
-		let x = (this.player.flipped ? !invertFlipped : invertFlipped)
+		const x = (this.player.flipped ? !invertFlipped : invertFlipped)
 			? this.x + 1 - this.size
 			: this.x;
 		return this.game.grid.getHexMap(
@@ -1039,7 +1040,7 @@ export abstract class Creature {
 	}
 
 	findEffect(name: string) {
-		let ret = [];
+		const ret = [];
 
 		this.effects.forEach((effect) => {
 			if (effect.name == name) {
@@ -1064,13 +1065,12 @@ export abstract class Creature {
 	 * @return {string} "normal", "hover", or "flying"
 	 */
 	movementType(): string {
-		let totalAbilities = this.abilities.length;
+		const totalAbilities = this.abilities.length;
 
 		// If the creature has an ability that modifies movement type, use that,
 		// otherwise use the creature's base movement type
 		for (let i = 0; i < totalAbilities; i++) {
 			if ('movementType' in this.abilities[i]) {
-				// @ts-ignore
 				return this.abilities[i].movementType();
 			}
 		}
@@ -1119,9 +1119,9 @@ export abstract class Creature {
 	/**
 	 * Freeze a creature, skipping its next turn. @see status.frozen
 	 *
-	 * @param {boolean} cryostasis Also apply the Cryostasis status @see status.cryostasis
+	 * @param Cryostasis Also apply the Cryostasis status @see status.cryostasis
 	 */
-	freeze(cryostasis: boolean = false): void {
+	freeze(cryostasis = false): void {
 		this.status.frozen = true;
 
 		if (cryostasis) {

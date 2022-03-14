@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Drops are a type of creature "buff" collected from a game board hex rather than
  * being applied by an ability.
@@ -19,9 +21,9 @@
  * - Drops are essentially permanent although this may change in the future.
  */
 
-import { Game} from '../game';
+import { Game } from './game';
 import { Creature } from './creature';
-import { Hex } from './hex';
+import { Hex } from './utility/hex';
 
 export abstract class Drop {
 	name: string;
