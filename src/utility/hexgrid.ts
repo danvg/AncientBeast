@@ -543,7 +543,7 @@ export abstract class HexGrid {
 				item.ghostOverlap();
 			});
 		} else {
-			// hex.ghostOverlap();
+			hex.ghostOverlap();
 		}
 	}
 
