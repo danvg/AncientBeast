@@ -3,9 +3,7 @@ import { Damage } from '../damage';
 import { Team } from '../utility/team';
 import * as arrayUtils from '../utility/arrayUtils';
 import { Creature } from '../creature';
-
-// TODO: Abilities are not yet separated into logic and rendering.
-import { PhaserCreature } from '../game_engines/phaser/phaser_creature';
+import { CreatureImpl } from '../renderer';
 
 /** Creates the abilities
  * @param {Object} G the game object
@@ -278,7 +276,7 @@ export default (G) => {
 					{ temp: true },
 					{ materializationSickness: creatureHasMaterializationSickness },
 				);
-				let fullCrea = new PhaserCreature(crea, G);
+				let fullCrea = new CreatureImpl(crea, G);
 				// Don't allow temporary Creature to take up space
 				fullCrea.cleanHex();
 				// Make temporary Creature invisible
