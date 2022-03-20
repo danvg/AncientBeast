@@ -1,30 +1,41 @@
-import { Game } from '../game';
+import { Game } from './game';
 import { Creature } from './creature';
+import { Hex } from './utility/hex';
 
 export abstract class Animations {
 	creature: Creature;
 	game: Game;
 	movementPoints: number;
+	walk_speed: number;
 
 	constructor(game: Game) {
 		this.game = game;
 		this.movementPoints = 0;
 	}
 
-	abstract walk(creature, path, opts): void;
-	abstract fly(creature, path, opts): void;
-	abstract teleport(creature, path, opts): void;
-	abstract projectile(this2, target, spriteId, path, args, startX, startY): any[];
+	abstract walk(creature: Creature, path: Hex[], opts: any): void;
+	abstract fly(creature: Creature, path: Hex[], opts: any): void;
+	abstract teleport(creature: Creature, path: Hex[], opts: any): void;
 
-	push(creature, path, opts) {
+	abstract projectile(
+		this2: any,
+		target: any,
+		spriteId: any,
+		path: Hex[],
+		args: any,
+		startX: number,
+		startY: number,
+	): any[];
+
+	push(creature: Creature, path: Hex[], opts: any) {
 		opts.pushed = true;
 		this.walk(creature, path, opts);
 	}
 
 	//--------Special Functions---------//
 
-	enterHex(creature, hex, opts) {
-		let game = this.game;
+	enterHex(creature: Creature, hex: Hex, opts: any) {
+		const game = this.game;
 
 		creature.cleanHex();
 		creature.x = hex.x - 0;
@@ -41,8 +52,8 @@ export abstract class Animations {
 		game.grid.orderCreatureZ();
 	}
 
-	leaveHex(creature, hex, opts) {
-		let game = this.game;
+	leaveHex(creature: Creature, hex: Hex, opts: any) {
+		const game = this.game;
 
 		if (!opts.pushed) {
 			creature.faceHex(hex, creature.hexagons[0]); // Determine facing
@@ -52,8 +63,8 @@ export abstract class Animations {
 		game.grid.orderCreatureZ();
 	}
 
-	movementComplete(creature, hex, animId, opts) {
-		let game = this.game;
+	movementComplete(creature: Creature, hex: Hex, animId: number, opts: any) {
+		const game = this.game;
 
 		if (opts.customMovementPoint > 0) {
 			creature.remainingMove = this.movementPoints;
@@ -73,7 +84,7 @@ export abstract class Animations {
 
 		game.grid.orderCreatureZ();
 
-		let queue = game.animationQueue.filter((item) => item != animId);
+		const queue = game.animationQueue.filter((item) => item != animId);
 
 		if (queue.length === 0) {
 			game.freezedInput = false;
@@ -85,5 +96,5 @@ export abstract class Animations {
 		game.animationQueue = queue;
 	}
 
-	abstract callMethodByStr(str: string, creature, path, opts);
+	abstract callMethodByStr(str: string, creature: Creature, path: Hex[], opts: any);
 }

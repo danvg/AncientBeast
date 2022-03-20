@@ -2,9 +2,8 @@ import { Damage } from '../damage';
 import { Team } from '../utility/team';
 import * as matrices from '../utility/matrices';
 import * as arrayUtils from '../utility/arrayUtils';
-import { Creature } from '../creature';
 import { Effect } from '../effect';
-import { Direction } from '../frontend/hex';
+import { Direction } from '../utility/hex';
 
 /** Creates the abilities
  * @param {Object} G the game object

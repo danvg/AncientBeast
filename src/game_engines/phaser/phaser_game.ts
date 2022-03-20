@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import $j from 'jquery';
 import { Game } from '../../game';
 import { CreatureQueue } from '../../creature_queue';
@@ -7,7 +9,7 @@ import { MusicPlayer } from '../../sound/musicplayer';
 import { getUrl } from '../../assetLoader';
 import { Player } from '../../player';
 import { UI } from '../../ui/interface';
-import { Creature } from '../creature';
+import { Creature } from '../../creature';
 import dataJson from '../../data/units.json';
 import Phaser, { Signal } from 'phaser-ce';
 import MatchI from '../../multiplayer/match';
@@ -15,11 +17,12 @@ import Gameplay from '../../multiplayer/gameplay';
 import { sleep } from '../../utility/time';
 import { PhaserHexGrid } from './phaser_hexgrid';
 import { PhaserAnimations } from './phaser_animations';
-import { Ability } from '../ability';
+import { Ability } from '../../ability';
 import { Effect } from '../../effect';
 import { PhaserHex } from './phaser_hex';
-import { Hex } from '../hex';
-import { Trap } from '../trap';
+import { Hex } from '../../utility/hex';
+import { Trap } from '../../utility/trap';
+import { Damage } from '../../damage';
 
 /**
  * Game Class
@@ -192,23 +195,22 @@ export class PhaserGame extends Game {
 	}
 
 	dataLoaded(data: any): void {
-		let dpcolor = ['blue', 'orange', 'green', 'red'];
+		const dpcolor = ['blue', 'orange', 'green', 'red'];
 
 		this.creatureData = data;
 
 		data.forEach((creature: Creature) => {
-			// @ts-ignore. Should we add playable property to creature?
 			if (!creature.playable) {
 				return;
 			}
 
-			let creatureId = creature.id,
+			const creatureId = creature.id,
 				realm = creature.realm,
 				level = creature.level,
 				type = realm.toUpperCase() + level,
-				name = creature.name,
-				count: number,
-				i: number;
+				name = creature.name;
+
+			let count: number, i: number;
 
 			creature.type = type;
 
@@ -265,8 +267,9 @@ export class PhaserGame extends Game {
 			this.matchid = matchid;
 		}
 
-		let totalSoundEffects = this.soundEffects.length,
-			i: number;
+		const totalSoundEffects = this.soundEffects.length;
+		let i: number;
+
 		this.gameState = 'loading';
 		if (setupOpt) {
 			this.gamelog.gameConfig = setupOpt;
@@ -288,7 +291,7 @@ export class PhaserGame extends Game {
 		this.Phaser.load.onFileComplete.add(this.loadFinish, this);
 
 		// Health
-		let playerColors = ['red', 'blue', 'orange', 'green'];
+		const playerColors = ['red', 'blue', 'orange', 'green'];
 		for (i = 0; i < 4; i++) {
 			this.Phaser.load.image('p' + i + '_health', getUrl('interface/rectangle_' + playerColors[i]));
 			this.Phaser.load.image('p' + i + '_plasma', getUrl('interface/capsule_' + playerColors[i]));
@@ -347,7 +350,7 @@ export class PhaserGame extends Game {
 	}
 
 	loadFinish(): void {
-		let progress = this.Phaser.load.progress,
+		const progress = this.Phaser.load.progress,
 			progressWidth = progress + '%';
 
 		$j('#barLoader .progress').css('width', progressWidth);
@@ -374,8 +377,8 @@ export class PhaserGame extends Game {
 	}
 
 	phaserRender(): void {
-		let count = this.creatures.length,
-			i: number;
+		const count = this.creatures.length;
+		let i: number;
 
 		for (i = 1; i < count; i++) {
 			//G.Phaser.debug.renderSpriteBounds(G.creatures[i].sprite);
@@ -424,7 +427,7 @@ export class PhaserGame extends Game {
 	 *
 	 */
 	setup(playerMode: number): void {
-		let bg: Phaser.Sprite, i: number;
+		let i: number;
 
 		// Phaser
 		this.Phaser.scale.parentIsWindow = true;
@@ -436,11 +439,12 @@ export class PhaserGame extends Game {
 		this.Phaser.stage.disableVisibilityChange = true;
 
 		if (!this.Phaser.device.desktop) {
-			// @ts-ignore
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore The property is not defined in stage, nothing we can do.
 			this.Phaser.stage.forcePortrait = true;
 		}
 
-		bg = this.Phaser.add.sprite(0, 0, 'background');
+		const bg = this.Phaser.add.sprite(0, 0, 'background');
 		bg.inputEnabled = true;
 		bg.events.onInputUp.add((Sprite: any, Pointer: any) => {
 			if (this.freezedInput || this.UI.dashopen) {
@@ -478,7 +482,7 @@ export class PhaserGame extends Game {
 		$j('#matchMaking').hide();
 
 		for (i = 0; i < playerMode; i++) {
-			let player = new Player(i, this);
+			const player = new Player(i, this);
 			this.players.push(player);
 
 			// Initialize players' starting positions
@@ -552,8 +556,10 @@ export class PhaserGame extends Game {
 		this.resizeCombatFrame(); // Resize while the game is starting
 		this.UI.resizeDash();
 
-		let self = this;
-		var resizeGame = function () {
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
+		const self = this;
+
+		const resizeGame = function () {
 			clearTimeout(self.windowResizeTimeout);
 			self.windowResizeTimeout = setTimeout(() => {
 				self.resizeCombatFrame();
@@ -585,15 +591,15 @@ export class PhaserGame extends Game {
 		if (this.multiplayer) {
 			if (Object.keys(this.match).length === 0) {
 				await this.connect.serverConnect(this.session);
-				let match = new MatchI(this.connect, this, this.session);
-				let gameplay = new Gameplay(this, match);
+				const match = new MatchI(this.connect, this, this.session);
+				const gameplay = new Gameplay(this, match);
 				match.gameplay = gameplay;
 				this.gameplay = gameplay;
 				this.match = match;
 
 				// Only host
 				if (this.matchInitialized) {
-					let n = await this.match.matchCreate();
+					const n = await this.match.matchCreate();
 
 					console.log('created match', n);
 					await match.matchMaker(n, this.configData);
@@ -601,7 +607,7 @@ export class PhaserGame extends Game {
 			}
 			// Non-host
 			if (this.matchid) {
-				let n = await this.match.matchJoin(this.matchid);
+				const n = await this.match.matchJoin(this.matchid);
 				console.log('joined match', n);
 			}
 		}
@@ -639,7 +645,7 @@ export class PhaserGame extends Game {
 				return;
 			}
 
-			let gameConfig = {
+			const gameConfig = {
 				background_image: v.string_properties.background_image,
 				abilityUpgrades: v.numeric_properties.abilityUpgrades,
 				creaLimitNbr: v.numeric_properties.creaLimitNbr,
@@ -649,11 +655,11 @@ export class PhaserGame extends Game {
 				turnTimePool: v.numeric_properties.turnTimePool,
 				unitDrops: v.numeric_properties.unitDrops,
 			};
-			let turntimepool =
+			const turntimepool =
 				v.numeric_properties.turnTimePool < 0 ? '∞' : v.numeric_properties.timePool;
-			let timepool = v.numeric_properties.timePool < 0 ? '∞' : v.numeric_properties.timePool;
-			let unitdrops = v.numeric_properties.unitDrops < 0 ? 'off' : 'on';
-			let _matchBtn =
+			const timepool = v.numeric_properties.timePool < 0 ? '∞' : v.numeric_properties.timePool;
+			const unitdrops = v.numeric_properties.unitDrops < 0 ? 'off' : 'on';
+			const _matchBtn =
 				$j(`<a class="user-match"><div class="avatar"></div><div class="user-match__col">
         Host: ${v.presence.username}<br />
         Player Mode: ${v.numeric_properties.playerMode}<br />
@@ -690,8 +696,8 @@ export class PhaserGame extends Game {
 	 * Replace the current queue with the next queue
 	 */
 	nextRound(): void {
-		let totalCreatures = this.creatures.length,
-			i: number;
+		const totalCreatures = this.creatures.length;
+		let i: number;
 
 		this.turn++;
 		this.log('Round ' + this.turn, 'roundmarker', true);
@@ -727,7 +733,7 @@ export class PhaserGame extends Game {
 		this.stopTimer();
 		// Delay
 		setTimeout(() => {
-			let interval = setInterval(() => {
+			const interval = setInterval(() => {
 				clearInterval(interval);
 
 				let differentPlayer = false;
@@ -736,14 +742,14 @@ export class PhaserGame extends Game {
 					this.nextRound(); // Switch to the next Round
 					return;
 				} else {
-					let next = this.queue.dequeue();
+					const next = this.queue.dequeue();
 					if (this.activeCreature) {
 						differentPlayer = this.activeCreature.player != next.player;
 					} else {
 						differentPlayer = true;
 					}
 
-					let last = this.activeCreature;
+					const last = this.activeCreature;
 					this.activeCreature = next; // Set new activeCreature
 
 					if (!last.dead) {
@@ -803,11 +809,11 @@ export class PhaserGame extends Game {
 	 *
 	 * Display obj in the console log and in the game log
 	 */
-	log(obj: any, htmlclass?: string, ifNoTimestamp: boolean = false): void {
+	log(obj: any, htmlclass?: string, ifNoTimestamp = false): void {
 		// Formating
+		const totalCreatures = this.creatures.length;
 		let stringConsole = obj,
 			stringLog = obj,
-			totalCreatures = this.creatures.length,
 			creature: Creature,
 			i: number;
 
@@ -864,7 +870,8 @@ export class PhaserGame extends Game {
 
 		o = $j.extend(
 			{
-				callback: function () {},
+				// eslint-disable-next-line @typescript-eslint/no-empty-function
+				callback: function () { },
 				noTooltip: false,
 				tooltip: 'Skipped',
 			},
@@ -897,8 +904,8 @@ export class PhaserGame extends Game {
 
 		this.activeCreature.facePlayerDefault();
 
-		let skipTurn = new Date();
-		let p = this.activeCreature.player;
+		const skipTurn = new Date();
+		const p = this.activeCreature.player;
 		p.totalTimePool = p.totalTimePool - (skipTurn.getTime() - p.startTime.getTime());
 		this.pauseTime = 0;
 		this.activeCreature.deactivate(false);
@@ -933,7 +940,8 @@ export class PhaserGame extends Game {
 
 		o = $j.extend(
 			{
-				callback: function () {},
+				// eslint-disable-next-line @typescript-eslint/no-empty-function
+				callback: function () { },
 			},
 			o,
 		);
@@ -956,7 +964,7 @@ export class PhaserGame extends Game {
 			o.callback.apply();
 		}, 1000);
 
-		let skipTurn = new Date(),
+		const skipTurn = new Date(),
 			p = this.activeCreature.player;
 
 		p.totalTimePool = p.totalTimePool - (skipTurn.getTime() - p.startTime.getTime());
@@ -982,12 +990,13 @@ export class PhaserGame extends Game {
 	 * checkTime()
 	 */
 	checkTime(): void {
-		let date = new Date(new Date().getTime() - this.pauseTime),
+		const date = new Date(new Date().getTime() - this.pauseTime),
 			p = this.activeCreature.player,
 			alertTime = 5, // In seconds
-			msgStyle = 'msg_effects',
-			totalPlayers = this.playerMode,
-			i: number;
+			totalPlayers = this.playerMode;
+
+		let msgStyle = 'msg_effects';
+		let i: number;
 
 		p.totalTimePool = Math.max(p.totalTimePool, 0); // Clamp
 
@@ -1094,8 +1103,8 @@ export class PhaserGame extends Game {
 	 * Query the database for creature stats
 	 */
 	retrieveCreatureStats(type: string) {
-		let totalCreatures = this.creatureData.length,
-			i: number;
+		const totalCreatures = this.creatureData.length;
+		let i: number;
 
 		for (i = totalCreatures - 1; i >= 0; i--) {
 			if (
@@ -1112,20 +1121,22 @@ export class PhaserGame extends Game {
 	}
 
 	triggerAbility(trigger: string, arg: any, retValue?: any) {
-		let [triggeredCreature, required] = arg;
+		const [triggeredCreature, required] = arg;
 
 		// For triggered creature
-		triggeredCreature.abilities.forEach((ability: Ability) => {
-			if (triggeredCreature.dead === true) {
-				return;
-			}
-
-			if (this.triggers[trigger].test(ability.getTrigger())) {
-				if (ability.require(required)) {
-					retValue = ability.animation(required);
+		if (triggeredCreature) {
+			triggeredCreature.abilities.forEach((ability: Ability) => {
+				if (triggeredCreature.dead === true) {
+					return;
 				}
-			}
-		});
+
+				if (this.triggers[trigger].test(ability.getTrigger())) {
+					if (ability.require(required)) {
+						retValue = ability.animation(required);
+					}
+				}
+			});
+		}
 
 		// For other creatures
 		this.creatures.forEach((creature: Creature) => {
@@ -1146,7 +1157,7 @@ export class PhaserGame extends Game {
 	}
 
 	triggerEffect(trigger: string, arg: any, retValue?: any): boolean {
-		let [triggeredCreature, required] = arg;
+		const [triggeredCreature, required] = arg;
 
 		// For triggered creature
 		triggeredCreature.effects.forEach((effect: Effect) => {
@@ -1178,7 +1189,7 @@ export class PhaserGame extends Game {
 	}
 
 	triggerTrap(trigger: string, arg: any): void {
-		let [triggeredCreature] = arg;
+		const [triggeredCreature] = arg;
 
 		triggeredCreature.hexagons.forEach((hex: Hex) => {
 			hex.activateTrap(this.triggers[trigger], triggeredCreature);
@@ -1186,12 +1197,12 @@ export class PhaserGame extends Game {
 	}
 
 	triggerDeleteEffect(trigger: string, creature: any): void {
-		let effects = creature == 'all' ? this.effects : creature.effects,
-			totalEffects = effects.length,
-			i: number;
+		const effects = creature == 'all' ? this.effects : creature.effects;
+		let totalEffects = effects.length;
+		let i: number;
 
 		for (i = 0; i < totalEffects; i++) {
-			let effect = effects[i];
+			const effect = effects[i];
 
 			if (
 				effect.turnLifetime > 0 &&
@@ -1211,13 +1222,13 @@ export class PhaserGame extends Game {
 	}
 
 	onStepIn(creature: Creature, hex: Hex, opts: any): void {
-		this.triggerAbility('onStepIn', arguments);
-		this.triggerEffect('onStepIn', arguments);
+		this.triggerAbility('onStepIn', [creature, hex, opts]);
+		this.triggerEffect('onStepIn', [creature, hex, opts]);
 		// Check traps last; this is because traps adds effects triggered by
 		// this event, which gets triggered again via G.triggerEffect. Otherwise
 		// the trap's effects will be triggered twice.
 		if (!opts || !opts.ignoreTraps) {
-			this.triggerTrap('onStepIn', arguments);
+			this.triggerTrap('onStepIn', [creature, hex, opts]);
 		}
 	}
 
@@ -1229,7 +1240,7 @@ export class PhaserGame extends Game {
 	 *
 	 * Removed individual args from definition because we are using the arguments variable.
 	 */
-	onStepOut(creature: Creature, hex: Hex, callback?: Function): void {
+	onStepOut(creature: Creature, hex: Hex, callback?: any): void {
 		this.triggerAbility('onStepOut', [creature, hex, callback]);
 		this.triggerEffect('onStepOut', [creature, hex, callback]);
 		// Check traps last; this is because traps add effects triggered by
@@ -1240,15 +1251,15 @@ export class PhaserGame extends Game {
 
 	onReset(creature: Creature): void {
 		this.triggerDeleteEffect('onReset', creature);
-		this.triggerAbility('onReset', arguments);
+		this.triggerAbility('onReset', creature);
 		this.triggerEffect('onReset', [creature, creature]);
 	}
 
 	// Removed individual args from definition because we are using the arguments variable.
-	onStartPhase(creature: Creature, callback?: Function): void {
-		let totalTraps = this.grid.traps.length,
-			trap: Trap,
-			i: number;
+	onStartPhase(creature: Creature, callback?: any): void {
+		const totalTraps = this.grid.traps.length;
+		let trap: Trap;
+		let i: number;
 
 		for (i = 0; i < totalTraps; i++) {
 			trap = this.grid.traps[i];
@@ -1278,24 +1289,24 @@ export class PhaserGame extends Game {
 	}
 
 	// Removed individual args from definition because we are using the arguments variable.
-	onEndPhase(creature: Creature, callback?: Function): void {
+	onEndPhase(creature: Creature, callback?: any): void {
 		this.triggerDeleteEffect('onEndPhase', creature);
 		this.triggerAbility('onEndPhase', [creature, callback]);
 		this.triggerEffect('onEndPhase', [creature, creature]);
 	}
 
 	// Removed individual args from definition because we are using the arguments variable.
-	onStartOfRound(creature?: Creature, callback?: Function): void {
+	onStartOfRound(creature?: Creature, callback?: any): void {
 		this.triggerDeleteEffect('onStartOfRound', 'all');
 	}
 
 	// Removed individual args from definition because we are using the arguments variable.
-	onCreatureMove(creature: Creature, hex: Hex, callback?: Function): void {
+	onCreatureMove(creature: Creature, hex: Hex, callback?: any): void {
 		this.triggerAbility('onCreatureMove', [creature, hex, callback]);
 	}
 
 	// Removed individual args from definition because we are using the arguments variable.
-	onCreatureDeath(creature: Creature, callback?: Function): void {
+	onCreatureDeath(creature: Creature, callback?: any): void {
 		this.triggerAbility('onCreatureDeath', [creature, callback]);
 		this.triggerEffect('onCreatureDeath', [creature, creature]);
 
@@ -1308,7 +1319,6 @@ export class PhaserGame extends Game {
 
 		// Look for effects owned by this creature and destroy them if necessary
 		this.effects
-			// @ts-ignore. effect.deleteOnOwnerDeath is not declared.
 			.filter((effect) => effect.owner === creature && effect.deleteOnOwnerDeath)
 			.forEach((effect) => {
 				effect.deleteEffect();
@@ -1319,19 +1329,19 @@ export class PhaserGame extends Game {
 			});
 	}
 
-	onCreatureSummon(creature: Creature, callback?: Function): void {
+	onCreatureSummon(creature: Creature, callback?: any): void {
 		this.triggerAbility('onCreatureSummon', [creature, creature, callback]);
 		this.triggerEffect('onCreatureSummon', [creature, creature]);
 	}
 
 	// Removed individual args from definition because we are using the arguments variable.
-	onEffectAttach(creature: Creature, effect: Effect, callback?: Function): void {
+	onEffectAttach(creature: Creature, effect: Effect, callback?: any): void {
 		this.triggerEffect('onEffectAttach', [creature, effect]);
 	}
 
-	onUnderAttack(creature: Creature, damage: any): any {
-		this.triggerAbility('onUnderAttack', arguments, damage);
-		this.triggerEffect('onUnderAttack', arguments, damage);
+	onUnderAttack(creature: Creature, damage: Damage): Damage {
+		this.triggerAbility('onUnderAttack', [creature, damage], damage);
+		this.triggerEffect('onUnderAttack', [creature, damage], damage);
 		return damage;
 	}
 
@@ -1347,13 +1357,13 @@ export class PhaserGame extends Game {
 		this.triggerEffect('onHeal', [creature, amount]);
 	}
 
-	onAttack(creature: Creature, damage: any): void {
-		this.triggerAbility('onAttack', arguments, damage);
-		this.triggerEffect('onAttack', arguments, damage);
+	onAttack(creature: Creature, damage: Damage): void {
+		this.triggerAbility('onAttack', [creature, damage], damage);
+		this.triggerEffect('onAttack', [creature, damage], damage);
 	}
 
 	findCreature(o: any): Creature[] {
-		let ret = [],
+		const ret = [],
 			o2 = $j.extend(
 				{
 					team: -1, // No team
@@ -1362,11 +1372,12 @@ export class PhaserGame extends Game {
 				o,
 			),
 			creatures = this.creatures,
-			totalCreatures = creatures.length,
-			creature: Creature,
-			match: boolean,
-			wrongTeam: boolean,
-			i: number;
+			totalCreatures = creatures.length;
+
+		let creature: Creature;
+		let match: boolean;
+		let wrongTeam: boolean;
+		let i: number;
 
 		for (i = 0; i < totalCreatures; i++) {
 			creature = creatures[i];
@@ -1409,13 +1420,14 @@ export class PhaserGame extends Game {
 	}
 
 	clearOncePerDamageChain(): void {
-		let creatures = this.creatures,
+		const creatures = this.creatures,
 			totalCreatures = creatures.length,
-			totalEffects = this.effects.length,
-			creature: Creature,
-			totalAbilities: number,
-			i: number,
-			j: number;
+			totalEffects = this.effects.length;
+
+		let creature: Creature;
+		let totalAbilities: number;
+		let i: number;
+		let j: number;
 
 		for (i = totalCreatures - 1; i >= 0; i--) {
 			creature = this.creatures[i];
@@ -1424,14 +1436,12 @@ export class PhaserGame extends Game {
 				totalAbilities = creature.abilities.length;
 
 				for (j = totalAbilities - 1; j >= 0; j--) {
-					// @ts-ignore. Add triggeredThisChain to Ability?
 					creature.abilities[j].triggeredThisChain = false;
 				}
 			}
 		}
 
 		for (i = 0; i < totalEffects; i++) {
-			// @ts-ignore. Add triggeredThisChain to Ability?
 			this.effects[i].triggeredThisChain = false;
 		}
 	}
@@ -1488,8 +1498,9 @@ export class PhaserGame extends Game {
 	}
 
 	action(o: any, opt: any): void {
-		let defaultOpt = {
-			callback: function () {},
+		const defaultOpt = {
+			// eslint-disable-next-line @typescript-eslint/no-empty-function
+			callback: function () { },
 		};
 
 		opt = $j.extend(defaultOpt, opt);
@@ -1517,7 +1528,7 @@ export class PhaserGame extends Game {
 				});
 				break;
 			case 'ability': {
-				let args = $j.makeArray(o.args[1]);
+				const args = $j.makeArray(o.args[1]);
 
 				if (o.target.type == 'hex') {
 					args.unshift(this.grid.hexes[o.target.y][o.target.x]);
@@ -1536,7 +1547,7 @@ export class PhaserGame extends Game {
 				}
 
 				if (o.target.type == 'array') {
-					let array = o.target.array.map((item: Hex) => this.grid.hexes[item.y][item.x]);
+					const array = o.target.array.map((item: Hex) => this.grid.hexes[item.y][item.x]);
 
 					args.unshift(array);
 					this.activeCreature.abilities[o.id].animation2({
@@ -1550,7 +1561,7 @@ export class PhaserGame extends Game {
 	}
 
 	getImage(url: string): void {
-		let img = new Image();
+		const img = new Image();
 		img.src = url;
 		img.onload = function () {
 			// No-op

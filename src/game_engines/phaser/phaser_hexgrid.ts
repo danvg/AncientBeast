@@ -1,10 +1,10 @@
 import $j from 'jquery';
-import { Creature } from "../creature";
+import { Creature } from "../../creature";
 import { Game } from "../../game";
 import { Team, isTeam } from "../../utility/team";
-import { HexGrid } from "../hexgrid";
+import { HexGrid } from "../../utility/hexgrid";
 import * as arrayUtils from '../../utility/arrayUtils';
-import { Hex } from "../hex";
+import { Hex } from "../../utility/hex";
 import { PhaserHex } from "./phaser_hex";
 import { PhaserCreature } from './phaser_creature';
 import { PhaserGame } from './phaser_game';
@@ -167,7 +167,7 @@ export class PhaserHexGrid extends HexGrid {
 
 			if (validChoice) {
 				hexes = hexes.concat(o.choices[i]);
-				o.choices[i].forEach((hex : Hex) => {
+				o.choices[i].forEach((hex: Hex) => {
 					arrayUtils.removePos(o.hexesDashed, hex);
 				});
 			} else if (o.isDirectionsQuery) {
@@ -804,4 +804,3 @@ export class PhaserHexGrid extends HexGrid {
 export function createPhaserHexGrid(opts: any, game: Game): HexGrid {
 	return new PhaserHexGrid(opts, game);
 }
-

@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import $j from 'jquery';
 import { Game } from '../game';
 import { Hex } from './hex';
 import { Effect } from '../effect';
-import { Creature } from './creature';
+import { Creature } from '../creature';
 
 export abstract class Trap {
 	game: Game;
@@ -53,7 +55,6 @@ export abstract class Trap {
 		this.hex.trap = this;
 
 		for (let i = this.effects.length - 1; i >= 0; i--) {
-			// @ts-ignore
 			this.effects[i].trap = this;
 		}
 	}

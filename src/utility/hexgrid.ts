@@ -1,5 +1,5 @@
 import { Direction, Hex } from './hex';
-import { Creature } from './creature';
+import { Creature } from '../creature';
 import { search } from '../utility/pathfinding';
 import * as matrices from '../utility/matrices';
 import { Team, isTeam } from '../utility/team';
@@ -543,7 +543,7 @@ export abstract class HexGrid {
 				item.ghostOverlap();
 			});
 		} else {
-			// hex.ghostOverlap();
+			hex.ghostOverlap();
 		}
 	}
 

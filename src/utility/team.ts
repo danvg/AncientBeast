@@ -1,4 +1,4 @@
-import { Creature } from '../frontend/creature';
+import { Creature } from '../creature';
 
 export enum Team {
 	Enemy = 1,

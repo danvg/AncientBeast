@@ -1,9 +1,9 @@
-import { Drop } from '../drops';
+import { Drop } from '../../drops';
 import { Game } from '../../game';
 import { PhaserHexGrid } from './phaser_hexgrid';
-import Phaser from 'phaser-ce';
-import { Creature } from '../creature';
+import { Creature } from '../../creature';
 import { PhaserGame } from './phaser_game';
+import Phaser from 'phaser-ce';
 
 export class PhaserDrop extends Drop {
 	display: Phaser.Sprite;

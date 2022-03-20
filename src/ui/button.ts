@@ -1,33 +1,55 @@
-import * as $j from 'jquery';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-function */
 
-export const ButtonStateEnum = {
-	normal: 'normal',
-	disabled: 'disabled',
-	glowing: 'glowing',
-	selected: 'selected',
-	active: 'active',
-	hidden: 'hidden',
-	noClick: 'noclick',
-	slideIn: 'slideIn',
-};
+import $j from 'jquery';
+import { Game } from '../game';
 
-export class Button {
+export enum ButtonStateEnum {
+	normal = 'normal',
+	disabled = 'disabled',
+	glowing = 'glowing',
+	selected = 'selected',
+	active = 'active',
+	hidden = 'hidden',
+	noClick = 'noclick',
+	slideIn = 'slideIn',
+}
+
+export abstract class Button {
+	game: Game;
+	cssTransitionMeta: any;
+	resolveCssTransition: any;
+	state: ButtonStateEnum;
+	$button: any;
+	overridefreeze: any;
+	clickable: any;
+	hasShortcut: any;
+	touchX: any;
+	touchY: any;
+	css: any;
+	resolveTransitionTask: any;
+	stateTransitionMeta: { transitionClass: any };
+	resolveCssTransitionTask: any;
+	click: () => void;
+	mouseover: () => void;
+	mouseleave: () => void;
+	touchstart: () => void;
+	touchend: () => void;
 	/**
 	 * Constructor - Create attributes and default buttons
 	 * @constructor
-	 * @param {Object} opts - Options
-	 * @param {Object} game - Game object
+	 * @param opts - Options
+	 * @param game - Game object
 	 */
-	constructor(opts, game) {
+	constructor(opts: any, game: Game) {
 		this.game = game;
-		this.click = null;
 
-		let defaultOpts = {
-			click: function () {},
-			mouseover: function () {},
-			mouseleave: function () {},
-			touchstart: function () {},
-			touchend: function () {},
+		const defaultOpts = {
+			click: function () { },
+			mouseover: function () { },
+			mouseleave: function () { },
+			touchstart: function () { },
+			touchend: function () { },
 			touchX: 0,
 			touchY: 0,
 			hasShortcut: false,
@@ -59,8 +81,8 @@ export class Button {
 		this.resolveCssTransition = null;
 	}
 
-	changeState(state) {
-		let game = this.game;
+	changeState(state: any) {
+		const game = this.game;
 		const wrapperElement = this.$button.parent();
 
 		state = state || this.state;
@@ -111,7 +133,7 @@ export class Button {
 			this.mouseleave();
 		});
 
-		this.$button.bind('touchstart', (event) => {
+		this.$button.bind('touchstart', (event: any) => {
 			event.preventDefault();
 			event.stopPropagation();
 			if (!this.overridefreeze) {
@@ -128,7 +150,7 @@ export class Button {
 			this.touchY = event.changedTouches[0].pageY;
 		});
 
-		this.$button.bind('touchend', (event) => {
+		this.$button.bind('touchend', (event: any) => {
 			event.preventDefault();
 			event.stopPropagation();
 			if (!this.overridefreeze) {
@@ -167,10 +189,10 @@ export class Button {
 	/**
 	 * Apply a CSS class on a button for a duration
 	 * Useful for flashing a different icon etc for a certain period of time
-	 * @param {string} transitionClass A CSS class to apply for the transitition
-	 * @param {number} transitionMs Time spent in the transition
+	 * @param transitionClass A CSS class to apply for the transitition
+	 * @param transitionMs Time spent in the transition
 	 */
-	cssTransition(transitionClass, transitionMs) {
+	cssTransition(transitionClass: string, transitionMs: number) {
 		const resolveCssTransitionTask = () => {
 			this.$button.removeClass(transitionClass);
 			this.resolveTransitionTask = null;
@@ -232,7 +254,7 @@ export class Button {
 		this.mouseleave();
 	}
 
-	shouldTriggerClick(changedTouches) {
+	shouldTriggerClick(changedTouches: any) {
 		const endTouchX = changedTouches.pageX;
 		const endTouchY = changedTouches.pageY;
 		let result = false;

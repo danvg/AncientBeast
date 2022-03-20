@@ -22,6 +22,13 @@ export class Effect {
 		this.target = target;
 		this.trigger = trigger;
 		this.creationTurn = game.turn;
+		this.special = null;
+		this.stackable = false;
+		this.specialHint = null;
+		this.triggeredThisChain = false;
+		this.deleteOnOwnerDeath = false;
+		this.requireFn = null;
+		this.trap = null;
 
 		let args = $j.extend(
 			{

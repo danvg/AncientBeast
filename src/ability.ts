@@ -1,9 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import $j from 'jquery';
-import { Game } from '../game';
+import { Game } from './game';
 import { Creature } from './creature';
-import { Direction, Hex } from './hex';
-import { Damage } from '../damage';
-import { Team, isTeam } from '../utility/team';
+import { Direction, Hex } from './utility/hex';
+import { Damage } from './damage';
+import { Team, isTeam } from './utility/team';
+import { Effect } from './effect';
+import * as arrayUtils from './utility/arrayUtils';
 
 export abstract class Ability {
 	creature: Creature;
@@ -17,16 +21,24 @@ export abstract class Ability {
 	upgraded: boolean;
 	title: string;
 	_disableCooldowns: boolean;
+	affectedByMatSickness: boolean;
 
 	// unsure where this properties are added to the class
 	upgrade: any;
 	requirements: any;
 	costs: any;
 	trigger: string;
-	triggerFunc: Function;
-	message: any;
+	triggerFunc: () => string;
+	triggeredThisChain: boolean;
+	message: string;
+	damages: Damage[];
+	effects: Effect[];
 
-	require: Function;
+	require: (arg?: any) => boolean;
+	query: () => void;
+	movementType: () => string;
+	activate: (...args: any) => void;
+	getAnimationData: (...args: any) => any;
 
 	constructor(creature: Creature, abilityID: number, game: Game) {
 		this.creature = creature;
@@ -40,7 +52,7 @@ export abstract class Ability {
 		this.upgraded = false;
 		this.title = '';
 
-		let data = game.retrieveCreatureStats(creature.type);
+		const data = game.retrieveCreatureStats(creature.type);
 		$j.extend(true, this, game.abilities[data.id][abilityID], data.ability_info[abilityID]);
 
 		if (this.requirements === undefined && this.costs !== undefined) {
@@ -66,7 +78,6 @@ export abstract class Ability {
 	}
 
 	hasUpgrade(): boolean {
-		// @ts-ignore
 		return this.game.abilityUpgrades >= 0 && this.upgrade;
 	}
 
@@ -89,20 +100,18 @@ export abstract class Ability {
 	 * @return {number} Uses left before upgrade.
 	 */
 	usesLeftBeforeUpgrade(): number {
-		let game = this.game;
+		const game = this.game;
 
 		if (this.isUpgradedPerUse()) {
-			// @ts-ignore
 			return game.abilityUpgrades - this.timesUsed;
 		}
 
-		// @ts-ignore
 		return game.abilityUpgrades - this.creature.turnsActive;
 	}
 
 	/**
 	 * Is this ability upgraded.
-	 * @return {boolean} Is upgraded?
+	 * @return Is upgraded?
 	 */
 	isUpgraded(): boolean {
 		return !this.hasUpgrade() ? false : this.usesLeftBeforeUpgrade() <= 0;
@@ -110,9 +119,9 @@ export abstract class Ability {
 
 	/**
 	 * Get the trigger method for this ablity.
-	 * @return {string|Function} Trigger
+	 * @return Trigger
 	 */
-	getTrigger(): string | Function {
+	getTrigger(): string | (() => string) {
 		if (this.trigger !== undefined) {
 			return this.trigger;
 		} else if (this.triggerFunc !== undefined) {
@@ -122,9 +131,14 @@ export abstract class Ability {
 		return undefined;
 	}
 
+	/**
+	 * Helper function that, if necessary evaluates the trigger function and
+	 * returns the trigger string it provides.
+	 * @return A trigger string.
+	 */
 	getTriggerStr(): string {
 		let s = '';
-		let trigger = this.getTrigger();
+		const trigger = this.getTrigger();
 
 		if (trigger instanceof String) {
 			s = trigger as string;
@@ -137,7 +151,6 @@ export abstract class Ability {
 
 	/**
 	 * Reset ability at start of turn.
-	 * @return {void}
 	 */
 	reset(): void {
 		this.setUsed(false);
@@ -149,9 +162,8 @@ export abstract class Ability {
 	 * Test and use the ability
 	 */
 	use(): any {
-		let game = this.game;
+		const game = this.game;
 
-		// @ts-ignore
 		if (this.getTrigger() !== 'onQuery' || !this.require()) {
 			return;
 		}
@@ -164,7 +176,6 @@ export abstract class Ability {
 		game.clearOncePerDamageChain();
 		game.activeCreature.hint(this.title, 'msg_effects');
 
-		// @ts-ignore
 		return this.query();
 	}
 
@@ -172,7 +183,7 @@ export abstract class Ability {
 	 * End the ability. Must be called at the end of each ability function;
 	 */
 	end(disableLogMsg: string, deferredEnding: boolean): void {
-		let game = this.game;
+		const game = this.game;
 
 		if (!disableLogMsg) {
 			game.log('%CreatureName' + this.creature.id + '% uses ' + this.title);
@@ -198,7 +209,7 @@ export abstract class Ability {
 	 * @return {void}
 	 */
 	setUsed(val: boolean): void {
-		let game = this.game;
+		const game = this.game;
 
 		if (val) {
 			this.used = true;
@@ -221,7 +232,7 @@ export abstract class Ability {
 	 * @return {void}
 	 */
 	postActivate(): void {
-		let game = this.game;
+		const game = this.game;
 		this.timesUsed++;
 		this.timesUsedThisTurn++;
 
@@ -240,7 +251,7 @@ export abstract class Ability {
 				creature: this.creature.id,
 			};
 
-			const find = (scorePart) =>
+			const find = (scorePart: any) =>
 				scorePart.type === bonus.type &&
 				scorePart.ability === bonus.ability &&
 				scorePart.creature === bonus.creature;
@@ -263,7 +274,7 @@ export abstract class Ability {
 	 * @param {Object} o Animation object to extend.
 	 * @return {void}
 	 */
-	abstract animation2(o: Object): void;
+	abstract animation2(o: any): void;
 
 	/**
 	 * Get an array of units in this collection of hexes.
@@ -271,7 +282,7 @@ export abstract class Ability {
 	 * @return {Array} Targest in these hexes
 	 */
 	getTargets(hexes: Hex[]): Hex[] {
-		let targets = {},
+		const targets = {},
 			targetsList = [];
 
 		hexes.forEach((item) => {
@@ -306,22 +317,19 @@ export abstract class Ability {
 	 * @param {Object} obj Damage object.
 	 * @return {boolean|string} damage
 	 */
-	getFormattedDamages(obj: Object): boolean | string {
-		// @ts-ignore
+	getFormattedDamages(obj: any): boolean | string {
 		obj = obj || this.damages;
 
 		if (!obj) {
 			return false;
 		}
 
-		let string = '',
-			creature = this.creature;
+		let string = '';
+		const creature = this.creature;
 
 		$j.each(obj, (key, value) => {
-			// @ts-ignore
 			if (key == 'special') {
 				// TODO: don't manually list all the stats and masteries when needed
-				// @ts-ignore
 				string += value.replace(
 					/%(health|regrowth|endurance|energy|meditation|initiative|offense|defense|movement|pierce|slash|crush|shock|burn|frost|poison|sonic|mental)%/g,
 					'<span class="$1"></span>',
@@ -329,9 +337,7 @@ export abstract class Ability {
 				return;
 			}
 
-			// @ts-ignore
 			if (key === 'energy') {
-				// @ts-ignore
 				value += creature.stats.reqEnergy;
 			}
 
@@ -339,7 +345,7 @@ export abstract class Ability {
 				string += ', ';
 			}
 
-			string += value + '<span class="' + key + '"></span>';
+			string += value + '<span class="' + key.toString() + '"></span>';
 		});
 
 		return string;
@@ -347,22 +353,18 @@ export abstract class Ability {
 
 	/**
 	 * Get formattted effects.
-	 * @return {boolean|string} effect
+	 * @return Effect
 	 */
-	getFormattedEffects() {
+	getFormattedEffects(): boolean | string {
 		let string = '';
 
-		// @ts-ignore
 		if (!this.effects) {
 			return false;
 		}
 
-		// @ts-ignore
 		for (let i = this.effects.length - 1; i >= 0; i--) {
-			// @ts-ignore
 			if (this.effects[i].special) {
 				// TODO: don't manually list all the stats and masteries when needed
-				// @ts-ignore
 				string += this.effects[i].special.replace(
 					/%(health|regrowth|endurance|energy|meditation|initiative|offense|defense|movement|pierce|slash|crush|shock|burn|frost|poison|sonic|mental)%/g,
 					'<span class="$1"></span>',
@@ -370,13 +372,11 @@ export abstract class Ability {
 				continue;
 			}
 
-			// @ts-ignore
 			$j.each(this.effects[i], (key, value) => {
 				if (string !== '') {
 					string += ', ';
 				}
 
-				// @ts-ignore
 				string += value + '<span class="' + key + '"></span>';
 			});
 		}
@@ -387,15 +387,15 @@ export abstract class Ability {
 	/*
 	 * targets : Array : Example : target = [ { target: crea1, hexesHit: 2 }, { target: crea2, hexesHit: 1 } ]
 	 */
-	areaDamage(attacker, damages, effects, targets, ignoreRetaliation) {
+	areaDamage(attacker: any, damages: any, effects: any, targets: any[], ignoreRetaliation: any) {
 		let multiKill = 0;
 		for (let i = 0, len = targets.length; i < len; i++) {
 			if (targets[i] === undefined) {
 				continue;
 			}
 
-			let dmg = new Damage(attacker, damages, targets[i].hexesHit, effects, this.game);
-			let damageResult = targets[i].target.takeDamage(dmg, {
+			const dmg = new Damage(attacker, damages, targets[i].hexesHit, effects, this.game);
+			const damageResult = targets[i].target.takeDamage(dmg, {
 				ignoreRetaliation,
 			});
 			multiKill += damageResult.kill + 0;
@@ -414,7 +414,7 @@ export abstract class Ability {
 	 * @param {Object} o
 	 * @return {boolean} At least one valid target?
 	 */
-	atLeastOneTarget(hexes: Hex[], o: Object): boolean {
+	atLeastOneTarget(hexes: Hex[], o: any): boolean {
 		const defaultOpt = {
 			team: Team.Both,
 			optTest: function () {
@@ -430,7 +430,6 @@ export abstract class Ability {
 			if (
 				!creature ||
 				!isTeam(this.creature, creature, options.team) ||
-				// @ts-ignore
 				!options.optTest(creature)
 			) {
 				continue;
@@ -450,7 +449,7 @@ export abstract class Ability {
 	 * @return {boolean} Return true if ability requirements are met.
 	 */
 	testRequirements(): boolean {
-		let game = this.game,
+		const game = this.game,
 			def = {
 				plasma: 0,
 				energy: 0,
@@ -494,7 +493,7 @@ export abstract class Ability {
 		}
 
 		// Energy
-		let reqEnergy = req.energy + this.creature.stats.reqEnergy;
+		const reqEnergy = req.energy + this.creature.stats.reqEnergy;
 		if (reqEnergy > 0) {
 			if (this.creature.energy < reqEnergy) {
 				this.message = abilityMsgs.notEnough.replace('%stat%', 'energy');
@@ -549,7 +548,7 @@ export abstract class Ability {
 	}
 
 	applyCost() {
-		let game = this.game,
+		const game = this.game,
 			creature = this.creature;
 
 		if (this.costs === undefined) {
@@ -584,8 +583,8 @@ export abstract class Ability {
 	 * @param {function} o.minDistance Target must be at least this distance away to be valid.
 	 * @return {Array} array of ints, length of total directions, 1 if direction valid else 0
 	 */
-	testDirections(o: Object): number[] {
-		let defaultOpt = {
+	testDirections(o: any): number[] {
+		const defaultOpt = {
 			team: Team.Enemy,
 			id: this.creature.id,
 			flipped: this.creature.player.flipped,
@@ -604,12 +603,10 @@ export abstract class Ability {
 
 		o = $j.extend(defaultOpt, o);
 
-		let outDirections = [];
+		const outDirections = [];
 		let deadzone = [];
 
-		// @ts-ignore
 		for (let i = 0, len = o.directions.length; i < len; i++) {
-			// @ts-ignore
 			if (!o.directions[i]) {
 				outDirections.push(0);
 				continue;
@@ -617,48 +614,36 @@ export abstract class Ability {
 
 			let fx = 0;
 
-			// @ts-ignore
 			if (o.sourceCreature instanceof Creature) {
-				// @ts-ignore
 				const flipped = o.sourceCreature.player.flipped;
 
 				if ((!flipped && i > 2) || (flipped && i < 3)) {
-					// @ts-ignore
 					fx = -1 * (o.sourceCreature.size - 1);
 				}
 			}
 
-			// @ts-ignore
 			let dir = this.game.grid.getHexLine(o.x + fx, o.y, i, o.flipped);
 
-			// @ts-ignore
 			if (o.distance > 0) {
-				// @ts-ignore
 				dir = dir.slice(0, o.distance + 1);
 			}
 
-			// @ts-ignore
 			if (o.minDistance > 0) {
 				// The untargetable area between the unit and the minimum distance.
-				// @ts-ignore
 				deadzone = dir.slice(0, o.minDistance);
-				// @ts-ignore
 				deadzone = arrayUtils.filterCreature(deadzone, o.includeCreature, o.stopOnCreature, o.id);
 
 				dir = dir.slice(
 					// 1 greater than expected to exclude current (source creature) hex.
-					// @ts-ignore
 					o.minDistance,
 				);
 			}
 
-			// @ts-ignore
 			dir = arrayUtils.filterCreature(dir, o.includeCreature, o.stopOnCreature, o.id);
 
 			/* If the ability has a minimum distance and units should block LOS, this
 			direction cannot be used if there is a unit in the deadzone. */
 			const blockingUnitInDeadzone =
-				// @ts-ignore
 				o.stopOnCreature && deadzone.length && this.atLeastOneTarget(deadzone, o);
 			const targetInDirection = this.atLeastOneTarget(dir, o);
 			const isValidDirection = targetInDirection && !blockingUnitInDeadzone;
@@ -674,8 +659,8 @@ export abstract class Ability {
 	 * @param {Object} o Dict of arguments for direction query.
 	 * @return {boolean} true if valid targets in at least one direction, else false
 	 */
-	testDirection(o: Object): boolean {
-		let directions = this.testDirections(o);
+	testDirection(o: any): boolean {
+		const directions = this.testDirections(o);
 
 		for (let i = 0, len = directions.length; i < len; i++) {
 			if (directions[i] === 1) {
